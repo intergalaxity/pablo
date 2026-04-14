@@ -1,696 +1,968 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <!-- Ensure responsive behavior across all devices -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>pablo</title>
-    <!-- Favicon: Added the "p" character favicon using an SVG Data URI -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>p</text></svg>">
-    <!-- Load Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Optional: Ensure the html and body take up the full viewport height */
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            /* Use Inter font for a modern look */
-            font-family: 'Inter', sans-serif;
-        }
-        /* Custom loader spinner */
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3b82f6; /* Blue-500 */
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pablo</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22black%22/></svg>">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;padding:0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif}
+.loader{border:3px solid #333;border-top:3px solid #fff;border-radius:50%;width:18px;height:18px;animation:spin 0.8s linear infinite;display:inline-block}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:100;display:flex;align-items:center;justify-content:center}
+.context-menu{position:fixed;background:#111;border:1px solid #333;z-index:200;min-width:160px;border-radius:4px;overflow:hidden}
+.context-menu button{display:block;width:100%;text-align:left;padding:10px 16px;color:#fff;background:none;border:none;font-size:13px;cursor:pointer;transition:background 0.15s}
+.context-menu button:hover{background:#222}
+.tab-btn{padding:8px 16px;border-bottom:2px solid transparent;color:#888;font-size:13px;cursor:pointer;background:none;border-top:none;border-left:none;border-right:none;transition:all 0.2s}
+.tab-btn.active{color:#fff;border-bottom-color:#fff}
+audio{width:100%;margin-top:8px;filter:invert(1)}
+.flag-img{width:20px;height:14px;object-fit:cover;display:inline-block;vertical-align:middle}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:#111}
+::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
+.pro-gold{color:#f5c518;font-size:11px;font-weight:700;margin-left:4px}
+.pro-star{color:#ff6d00;font-size:13px;margin-left:4px}
+.verified{color:#1da1f2;font-size:14px;margin-left:4px}
+input[type=file]{display:none}
+.upload-zone{border:1px dashed #444;padding:24px;text-align:center;cursor:pointer;transition:border-color 0.2s;border-radius:4px}
+.upload-zone:hover{border-color:#888}
+.card{background:#111;border:1px solid #222;border-radius:6px;overflow:hidden;transition:border-color 0.2s;cursor:pointer}
+.card:hover{border-color:#444}
+.comment-item{padding:10px 0;border-bottom:1px solid #1a1a1a}
+</style>
 </head>
-<!-- 
-    The body element uses Tailwind classes:
-    - min-h-screen: Ensures it takes at least the full height of the viewport.
-    - w-full: Ensures it takes the full width.
-    - bg-neutral-900: Provides the requested very deep dark gray color. 
--->
-<body class="w-full bg-neutral-900">
+<body class="bg-neutral-950 text-white min-h-screen">
 
-    <!-- Message Box Element: Used to display non-blocking messages (like search results or form status) instead of alert() -->
-    <div id="messageBox" class="fixed top-20 right-6 p-4 rounded-lg bg-yellow-500 text-black shadow-lg z-50 transition-opacity duration-300 opacity-0 hidden"></div>
+<!-- MESSAGE BOX -->
+<div id="msgBox" class="fixed top-20 right-4 z-50 px-4 py-3 rounded text-sm font-medium shadow-lg transition-all duration-300 opacity-0 pointer-events-none max-w-xs"></div>
 
-    <!-- Black Header (fixed at the top) -->
-    <header class="fixed top-0 left-0 w-full h-16 bg-black z-10 flex justify-between items-center px-6 shadow-2xl">
-        
-        <!-- Title/Logo for Pablo - Clicking returns to landing page -->
-        <a href="#" id="homeLink" class="text-2xl font-extrabold text-white rounded-md hover:text-neutral-300 transition-colors">pablo</a>
+<!-- CONTEXT MENU (pfp dropdown) -->
+<div id="ctxMenu" class="context-menu hidden">
+  <button onclick="navTo('profile-self')">profile</button>
+  <button onclick="navTo('likes')">likes</button>
+  <button onclick="navTo('following')">following</button>
+  <button onclick="navTo('pro')">pro</button>
+  <button onclick="openSettings()">settings</button>
+  <button onclick="handleLogout()" style="color:#f87171">log out</button>
+</div>
 
-        <!-- Search Bar Container (Gray Bar) -->
-        <form id="searchForm" class="flex-1 max-w-sm mx-6"> 
-            <!-- Reduced height (h-8), removed rounding (rounded-full -> rounded-none) -->
-            <div class="flex items-center bg-neutral-800 rounded-none h-8 px-3 space-x-2">
-                <!-- Magnifying Glass Icon (Inline SVG) - Reduced size to w-4 h-4 -->
-                <svg class="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
-                <!-- Search Input (Functional element) -->
-                <input 
-                    type="text" 
-                    id="searchInput" 
-                    placeholder="search" 
-                    class="bg-transparent text-neutral-200 text-xs font-medium w-full focus:outline-none placeholder-neutral-400" 
-                />
-            </div>
-        </form>
-
-        <!-- Authentication Buttons Container -->
-        <div id="authContainer" class="flex space-x-4">
-            <!-- Sign Up Button -->
-            <button id="signUpButton" class="text-white text-sm font-semibold border border-white py-1.5 px-4 rounded-full hover:bg-neutral-800 transition-colors">
-                sign up
-            </button>
-            
-            <!-- Log In Button -->
-            <button id="logInButton" class="bg-white text-black text-sm font-bold py-1.5 px-4 rounded-full hover:bg-neutral-300 transition-colors">
-                log in
-            </button>
-
-            <!-- Log Out Button (Hidden initially, shown when authenticated) -->
-            <button id="logOutButton" class="bg-red-600 text-white text-sm font-bold py-1.5 px-4 rounded-full hover:bg-red-700 transition-colors hidden">
-                log out
-            </button>
-        </div>
-    </header>
-    
-    <!-- 
-        VIEW CONTAINER: This division will hold all content pages. 
-        JavaScript toggles which child is visible. 
-        The top margin (mt-16) pushes content down past the fixed header.
-    -->
-    <div class="mt-16">
-
-        <!-- ---------------------------------------------------------------------- -->
-        <!-- LANDING VIEW CONTAINER (Default/Initial View) -->
-        <!-- ---------------------------------------------------------------------- -->
-        <div id="landingView" class="w-full">
-            
-            <!-- Main Content Area -->
-            <main class="w-full h-[calc(100vh-4rem)] flex items-center justify-center">
-                <p class="text-white text-3xl font-light text-center max-w-xl p-4">
-                    music
-                </p>
-            </main>
-
-            <!-- Testimonials Section -->
-            <section class="w-full bg-neutral-900 p-12 md:p-20 border-t border-neutral-800">
-                <h2 class="text-3xl text-left text-white font-extrabold mb-12 max-w-4xl mx-auto">testimonials (reviews in english)</h2>
-                
-                <div class="max-w-4xl mx-auto space-y-12">
-                    <div class="space-y-2">
-                        <p class="text-white text-xl italic font-light">"10/10 it has the best ui design i've ever seen actually"</p>
-                        <p class="text-sm font-semibold text-neutral-400">— operation</p>
-                    </div>
-                    <div class="space-y-2">
-                        <p class="text-white text-xl italic font-light">"it's nonchalant as fuck"</p>
-                        <p class="text-sm font-semibold text-neutral-400">— mxhstygd</p>
-                    </div>
-                    <div class="space-y-2">
-                        <p class="text-white text-xl italic font-light">"pablo"</p>
-                        <p class="text-sm font-semibold text-neutral-400">— pablo</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Statistic Section -->
-            <section class="w-full bg-neutral-900 p-12 md:p-20 text-center border-t border-neutral-800">
-                <div class="p-4">
-                    <p class="text-white text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight">
-                        pablo is used by 8.142 billion users*
-                    </p>
-                    <p class="text-neutral-400 text-sm italic mt-2">
-                        *according to me
-                    </p>
-                </div>
-            </section>
-        </div>
-
-        <!-- ---------------------------------------------------------------------- -->
-        <!-- SIGN UP VIEW CONTAINER -->
-        <!-- ---------------------------------------------------------------------- -->
-        <div id="signUpView" class="hidden w-full pt-12 pb-16 min-h-[calc(100vh-4rem)] flex justify-center items-start">
-            <div class="w-full max-w-md px-4">
-                <h2 class="text-3xl font-extrabold text-white mb-8 text-center">sign up to pablo</h2>
-                
-                <form id="signUpForm" class="space-y-4">
-                    <!-- This input is critical for the Firestore username check -->
-                    <input type="text" id="signUpUsername" placeholder="name" required class="w-full p-4 bg-neutral-900 text-white border border-white focus:ring-1 focus:ring-white focus:outline-none placeholder-neutral-500 text-sm"/>
-                    
-                    <input type="email" id="signUpEmail" placeholder="email" required class="w-full p-4 bg-neutral-900 text-white border border-white focus:ring-1 focus:ring-white focus:outline-none placeholder-neutral-500 text-sm"/>
-                    
-                    <input type="password" id="signUpPassword" placeholder="password" required class="w-full p-4 bg-neutral-900 text-white border border-white focus:ring-1 focus:ring-white focus:outline-none placeholder-neutral-500 text-sm"/>
-                    
-                    <input type="password" id="signUpConfirmPassword" placeholder="confirm password" required class="w-full p-4 bg-neutral-900 text-white border border-white focus:ring-1 focus:ring-white focus:outline-none placeholder-neutral-500 text-sm"/>
-                    
-                    <!-- Sign Up Button with loading spinner -->
-                    <button type="submit" id="signUpSubmitButton" class="w-full bg-white text-black font-bold py-3 mt-4 hover:bg-neutral-300 transition-colors shadow-lg flex items-center justify-center">
-                        SIGN UP
-                    </button>
-                </form>
-                
-                <!-- Switch to Log In -->
-                <p class="text-center text-sm mt-6 text-neutral-400">
-                    Already got an account? 
-                    <a href="#" id="showLoginLink" class="text-white font-semibold hover:text-neutral-300 transition-colors">Log In</a>
-                </p>
-            </div>
-        </div>
-        
-        <!-- ---------------------------------------------------------------------- -->
-        <!-- LOG IN VIEW CONTAINER -->
-        <!-- ---------------------------------------------------------------------- -->
-        <div id="logInView" class="hidden w-full pt-12 pb-16 min-h-[calc(100vh-4rem)] flex justify-center items-start">
-            <div class="w-full max-w-md px-4">
-                <h2 class="text-3xl font-extrabold text-white mb-8 text-center">log in to pablo</h2>
-                
-                <form id="logInForm" class="space-y-4">
-                    <input type="text" id="logInEmail" placeholder="email" required class="w-full p-4 bg-neutral-900 text-white border border-white focus:ring-1 focus:ring-white focus:outline-none placeholder-neutral-500 text-sm"/>
-                    
-                    <input type="password" id="logInPassword" placeholder="password" required class="w-full p-4 bg-neutral-900 text-white border border-white focus:ring-1 focus:ring-white focus:outline-none placeholder-neutral-500 text-sm"/>
-                    
-                    <!-- Log In Button with loading spinner -->
-                    <button type="submit" id="logInSubmitButton" class="w-full bg-white text-black font-bold py-3 mt-4 hover:bg-neutral-300 transition-colors shadow-lg flex items-center justify-center">
-                        LOG IN
-                    </button>
-                </form>
-                
-                <!-- Switch to Sign Up -->
-                <p class="text-center text-sm mt-6 text-neutral-400">
-                    Need an account? 
-                    <a href="#" id="showSignUpLinkFromLogin" class="text-white font-semibold hover:text-neutral-300 transition-colors">Sign Up</a>
-                </p>
-            </div>
-        </div>
-        
-        <!-- ---------------------------------------------------------------------- -->
-        <!-- AUTHENTICATED DASHBOARD VIEW -->
-        <!-- ---------------------------------------------------------------------- -->
-        <div id="dashboardView" class="hidden w-full pt-20 pb-16 min-h-[calc(100vh-4rem)] flex flex-col items-center justify-start text-white">
-            <div class="max-w-4xl w-full p-4">
-                <!-- ID added to this element to update the greeting dynamically -->
-                <h2 id="dashboardGreeting" class="text-4xl font-extrabold mb-4">welcome back!</h2>
-                <p id="authStatusText" class="text-neutral-400 mb-8"></p>
-                
-                <div class="space-y-4 p-6 bg-neutral-800 border border-neutral-700">
-                    <h3 class="text-xl font-bold">your secret stash</h3>
-                    <p>This is where your content would go. You are successfully logged in!</p>
-                    <p>User ID (used for unique data storage): <span id="currentUserId" class="font-mono text-sm text-neutral-300"></span></p>
-                </div>
-            </div>
-        </div>
-        
+<!-- SETTINGS MODAL -->
+<div id="settingsModal" class="modal-overlay hidden">
+  <div style="background:#111;border:1px solid #333;border-radius:8px;padding:28px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h2 style="font-size:18px;font-weight:700;margin:0">settings</h2>
+      <button onclick="closeSettings()" style="background:none;border:none;color:#888;cursor:pointer;font-size:20px">&times;</button>
     </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label style="font-size:12px;color:#888;display:block;margin-bottom:6px">change email</label>
+        <input id="stNewEmail" type="email" placeholder="new email" style="width:100%;padding:10px;background:#1a1a1a;border:1px solid #333;color:#fff;border-radius:4px;font-size:13px">
+        <button onclick="doChangeEmail()" style="margin-top:8px;padding:8px 16px;background:#fff;color:#000;border:none;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer">update email</button>
+      </div>
+      <hr style="border-color:#222;margin:4px 0">
+      <div>
+        <label style="font-size:12px;color:#888;display:block;margin-bottom:6px">change password</label>
+        <input id="stNewPass" type="password" placeholder="new password" style="width:100%;padding:10px;background:#1a1a1a;border:1px solid #333;color:#fff;border-radius:4px;font-size:13px">
+        <button onclick="doChangePassword()" style="margin-top:8px;padding:8px 16px;background:#fff;color:#000;border:none;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer">update password</button>
+      </div>
+      <hr style="border-color:#222;margin:4px 0">
+      <div>
+        <label style="font-size:12px;color:#888;display:block;margin-bottom:6px">theme</label>
+        <div style="display:flex;gap:8px">
+          <button onclick="setTheme('dark')" id="themeD" style="flex:1;padding:8px;background:#fff;color:#000;border:none;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer">dark</button>
+          <button onclick="setTheme('light')" id="themeL" style="flex:1;padding:8px;background:#1a1a1a;color:#fff;border:1px solid #333;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer">light</button>
+        </div>
+      </div>
+      <hr style="border-color:#222;margin:4px 0">
+      <div>
+        <label style="font-size:12px;color:#888;display:block;margin-bottom:6px">request verification</label>
+        <button onclick="requestVerification()" style="padding:8px 16px;background:transparent;color:#1da1f2;border:1px solid #1da1f2;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer">&#10003; request blue checkmark</button>
+      </div>
+      <hr style="border-color:#222;margin:4px 0">
+      <div>
+        <button onclick="deleteAccount()" style="padding:8px 16px;background:transparent;color:#f87171;border:1px solid #f87171;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;width:100%">delete account</button>
+      </div>
+    </div>
+  </div>
+</div>
 
-    <!-- FOOTER: Remains fixed at the bottom of the body (no change) -->
-    <footer class="w-full flex items-center justify-center bg-black border-t border-neutral-800 py-16">
-        <p class="text-neutral-400 text-sm">
-            made with hate by intergalaxity
-        </p>
-    </footer>
+<!-- PROFILE EDITOR MODAL -->
+<div id="profileEditModal" class="modal-overlay hidden">
+  <div style="background:#111;border:1px solid #333;border-radius:8px;padding:28px;width:100%;max-width:420px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h2 style="font-size:18px;font-weight:700;margin:0">edit profile</h2>
+      <button onclick="closeProfileEdit()" style="background:none;border:none;color:#888;cursor:pointer;font-size:20px">&times;</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div style="text-align:center">
+        <img id="editPfpPreview" src="https://upload.wikimedia.org/wikipedia/commons/0/03/Twitter_default_profile_400x400.png" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #333;margin:0 auto;display:block;cursor:pointer" onclick="document.getElementById('editPfpInput').click()">
+        <input type="file" id="editPfpInput" accept="image/*" onchange="previewPfp(event)">
+        <p style="font-size:11px;color:#666;margin-top:6px">click to change photo</p>
+      </div>
+      <input id="editUsername" type="text" placeholder="display name" style="width:100%;padding:10px;background:#1a1a1a;border:1px solid #333;color:#fff;border-radius:4px;font-size:13px">
+      <textarea id="editBio" placeholder="bio" rows="3" style="width:100%;padding:10px;background:#1a1a1a;border:1px solid #333;color:#fff;border-radius:4px;font-size:13px;resize:none"></textarea>
+      <div>
+        <label style="font-size:12px;color:#888;display:block;margin-bottom:6px">country (2-letter code, e.g. US, GB, JP)</label>
+        <input id="editCountry" type="text" maxlength="2" placeholder="US" style="width:100%;padding:10px;background:#1a1a1a;border:1px solid #333;color:#fff;border-radius:4px;font-size:13px;text-transform:uppercase">
+      </div>
+      <button onclick="saveProfileEdit()" style="padding:10px;background:#fff;color:#000;border:none;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer">save</button>
+    </div>
+  </div>
+</div>
 
-    <!-- JavaScript for Functionality (Firebase and UI Logic) -->
-    <script type="module">
-        // Firebase Configuration (Using provided mock config)
-        window.__firebase_config = JSON.stringify({
-            apiKey: "AIzaSyDt91IN8NhTwgcVdk8R_7aOzeMYvszKRyE",
-            authDomain: "pablomusic1.firebaseapp.com",
-            projectId: "pablomusic1",
-            storageBucket: "pablomusic1.firebasestorage.app",
-            messagingSenderId: "681554880367",
-            appId: "1:681554880367:web:9c9760e7796f3c8956ea9a"
-        });
+<!-- UPLOAD MODAL -->
+<div id="uploadModal" class="modal-overlay hidden">
+  <div style="background:#111;border:1px solid #333;border-radius:8px;padding:28px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h2 style="font-size:18px;font-weight:700;margin:0">upload</h2>
+      <button onclick="closeUpload()" style="background:none;border:none;color:#888;cursor:pointer;font-size:20px">&times;</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:20px">
+      <button onclick="setUploadType('track')" id="uploadTypeTrack" style="flex:1;padding:8px;background:#fff;color:#000;border:none;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer">single track</button>
+      <button onclick="setUploadType('album')" id="uploadTypeAlbum" style="flex:1;padding:8px;background:#1a1a1a;color:#fff;border:1px solid #333;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer">album</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <input id="uploadTitle" type="text" placeholder="title" style="width:100%;padding:10px;background:#1a1a1a;border:1px solid #333;color:#fff;border-radius:4px;font-size:13px">
+      <textarea id="uploadDesc" placeholder="description / bio" rows="2" style="width:100%;padding:10px;background:#1a1a1a;border:1px solid #333;color:#fff;border-radius:4px;font-size:13px;resize:none"></textarea>
+      <input id="uploadGenre" type="text" placeholder="genre" style="width:100%;padding:10px;background:#1a1a1a;border:1px solid #333;color:#fff;border-radius:4px;font-size:13px">
+      <div>
+        <label style="font-size:12px;color:#888;display:block;margin-bottom:6px">cover art</label>
+        <div class="upload-zone" onclick="document.getElementById('uploadCoverInput').click()">
+          <img id="uploadCoverPreview" src="" style="display:none;max-height:120px;margin:0 auto 8px;border-radius:4px">
+          <p id="uploadCoverText" style="color:#666;font-size:13px;margin:0">click to select cover image</p>
+        </div>
+        <input type="file" id="uploadCoverInput" accept="image/*" onchange="previewCover(event)">
+      </div>
+      <div id="albumTracksSection" style="display:none">
+        <label style="font-size:12px;color:#888;display:block;margin-bottom:6px">track names (one per line)</label>
+        <textarea id="uploadTrackNames" placeholder="Track 1&#10;Track 2&#10;Track 3" rows="4" style="width:100%;padding:10px;background:#1a1a1a;border:1px solid #333;color:#fff;border-radius:4px;font-size:13px;resize:none"></textarea>
+      </div>
+      <div>
+        <label style="font-size:12px;color:#888;display:block;margin-bottom:6px" id="audioLabel">audio file</label>
+        <div class="upload-zone" onclick="document.getElementById('uploadAudioInput').click()">
+          <p id="uploadAudioText" style="color:#666;font-size:13px;margin:0">click to select audio</p>
+        </div>
+        <input type="file" id="uploadAudioInput" accept="audio/*" onchange="previewAudio(event)">
+      </div>
+      <button onclick="doUpload()" id="uploadSubmitBtn" style="padding:10px;background:#fff;color:#000;border:none;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">upload</button>
+    </div>
+  </div>
+</div>
 
-        // Import Firebase modules (Added necessary Firestore functions, including getDoc)
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { 
-            getAuth, 
-            signInWithCustomToken, 
-            onAuthStateChanged, 
-            createUserWithEmailAndPassword, 
-            signInWithEmailAndPassword,
-            signOut 
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { 
-            getFirestore, 
-            setLogLevel,
-            collection,
-            query,
-            where,
-            getDocs,
-            doc,
-            setDoc,
-            getDoc // <-- ADDED: Necessary to fetch the username document
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+<!-- HEADER -->
+<header id="mainHeader" style="position:fixed;top:0;left:0;width:100%;height:56px;background:#000;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid #1a1a1a">
+  <a href="#" id="homeLink" style="font-size:20px;font-weight:900;color:#fff;text-decoration:none;letter-spacing:-0.5px">pablo</a>
 
-        // Enable debug logging for Firestore/Firebase
-        setLogLevel('Debug');
+  <div style="flex:1;max-width:360px;margin:0 20px">
+    <div style="display:flex;align-items:center;background:#111;border:1px solid #222;height:32px;padding:0 10px;gap:8px">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input type="text" id="searchInput" placeholder="search" style="background:none;border:none;color:#fff;font-size:12px;width:100%;outline:none" onkeydown="if(event.key==='Enter')doSearch()">
+      <div style="display:flex;gap:4px">
+        <button onclick="setSearchFilter('all')" id="sf-all" style="font-size:10px;padding:2px 6px;border-radius:2px;background:#fff;color:#000;border:none;cursor:pointer">all</button>
+        <button onclick="setSearchFilter('tracks')" id="sf-tracks" style="font-size:10px;padding:2px 6px;border-radius:2px;background:none;color:#888;border:1px solid #333;cursor:pointer">tracks</button>
+        <button onclick="setSearchFilter('albums')" id="sf-albums" style="font-size:10px;padding:2px 6px;border-radius:2px;background:none;color:#888;border:1px solid #333;cursor:pointer">albums</button>
+        <button onclick="setSearchFilter('people')" id="sf-people" style="font-size:10px;padding:2px 6px;border-radius:2px;background:none;color:#888;border:1px solid #333;cursor:pointer">people</button>
+      </div>
+    </div>
+  </div>
 
-        // 1. GLOBAL VARIABLES & CONFIG ACCESS
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        
-        // Firestore path for storing and checking unique usernames (Public collection)
-        const USERNAME_COLLECTION_PATH = `/artifacts/${appId}/public/data/usernames`;
+  <div id="headerRight" style="display:flex;align-items:center;gap:16px">
+    <!-- logged out -->
+    <div id="headerGuest">
+      <button onclick="navTo('signup')" style="font-size:13px;font-weight:600;color:#fff;background:none;border:1px solid #444;padding:5px 14px;border-radius:20px;cursor:pointer">sign up</button>
+      <button onclick="navTo('login')" style="font-size:13px;font-weight:700;color:#000;background:#fff;border:none;padding:5px 14px;border-radius:20px;cursor:pointer;margin-left:8px">log in</button>
+    </div>
+    <!-- logged in -->
+    <div id="headerUser" style="display:none;align-items:center;gap:14px">
+      <nav style="display:flex;gap:16px">
+        <a href="#" onclick="navTo('home')" style="font-size:13px;color:#ccc;text-decoration:none;font-weight:400;transition:color 0.2s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#ccc'">home</a>
+        <a href="#" onclick="navTo('library')" style="font-size:13px;color:#ccc;text-decoration:none;font-weight:400;transition:color 0.2s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#ccc'">library</a>
+        <a href="#" onclick="openUpload()" style="font-size:13px;color:#ccc;text-decoration:none;font-weight:400;transition:color 0.2s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#ccc'">upload</a>
+      </nav>
+      <span class="material-icons" onclick="openSettings()" style="font-size:20px;color:#888;cursor:pointer;transition:color 0.2s" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#888'">settings</span>
+      <img id="headerPfp" src="https://upload.wikimedia.org/wikipedia/commons/0/03/Twitter_default_profile_400x400.png" style="width:32px;height:32px;border-radius:50%;object-fit:cover;cursor:pointer;border:1px solid #333" onclick="toggleCtxMenu(event)">
+    </div>
+  </div>
+</header>
 
-        let app;
-        let auth;
-        let db;
-        let isAuthReady = false;
-        let currentUserId = null;
+<!-- MAIN CONTENT -->
+<main style="margin-top:56px;min-height:calc(100vh - 56px)">
 
-        // 2. DOM ELEMENT REFERENCES
-        const messageBox = document.getElementById('messageBox');
-        
-        // Views
-        const landingView = document.getElementById('landingView');
-        const signUpView = document.getElementById('signUpView');
-        const logInView = document.getElementById('logInView');
-        const dashboardView = document.getElementById('dashboardView');
-        
-        // Header UI
-        const homeLink = document.getElementById('homeLink');
-        const signUpButton = document.getElementById('signUpButton');
-        const logInButton = document.getElementById('logInButton');
-        const logOutButton = document.getElementById('logOutButton');
+  <!-- LANDING -->
+  <div id="view-landing" style="display:none">
+    <div style="min-height:calc(100vh - 56px - 80px);display:flex;align-items:center;justify-content:center">
+      <p style="font-size:28px;font-weight:200;color:#fff;text-align:center">music</p>
+    </div>
+    <section style="padding:60px 40px;border-top:1px solid #1a1a1a;max-width:700px;margin:0 auto">
+      <h2 style="font-size:26px;font-weight:900;margin-bottom:48px">testimonials (reviews in english)</h2>
+      <div style="display:flex;flex-direction:column;gap:36px">
+        <div><p style="font-size:18px;font-weight:300;font-style:italic;margin:0 0 6px">"10/10 it has the best ui design i've ever seen actually"</p><p style="font-size:12px;color:#666;margin:0">— operation</p></div>
+        <div><p style="font-size:18px;font-weight:300;font-style:italic;margin:0 0 6px">"it's nonchalant as fuck"</p><p style="font-size:12px;color:#666;margin:0">— mxhstygd</p></div>
+        <div><p style="font-size:18px;font-weight:300;font-style:italic;margin:0 0 6px">"pablo"</p><p style="font-size:12px;color:#666;margin:0">— pablo</p></div>
+      </div>
+    </section>
+    <section style="padding:60px 40px;border-top:1px solid #1a1a1a;text-align:center">
+      <p style="font-size:48px;font-weight:900;letter-spacing:-2px;margin:0">pablo is used by 8.142 billion users*</p>
+      <p style="font-size:12px;color:#555;font-style:italic;margin-top:8px">*according to me</p>
+    </section>
+  </div>
 
-        // Forms and Inputs
-        const signUpForm = document.getElementById('signUpForm');
-        const logInForm = document.getElementById('logInForm');
-        const signUpSubmitButton = document.getElementById('signUpSubmitButton');
-        const logInSubmitButton = document.getElementById('logInSubmitButton');
-        
-        // Dashboard
-        const currentUserIdSpan = document.getElementById('currentUserId');
-        const authStatusText = document.getElementById('authStatusText');
-        const dashboardGreetingElement = document.getElementById('dashboardGreeting'); // <-- ADDED: Reference to the dynamic H2
+  <!-- SIGN UP -->
+  <div id="view-signup" style="display:none;padding:48px 16px;min-height:calc(100vh - 56px);display:none;align-items:flex-start;justify-content:center">
+    <div style="width:100%;max-width:400px">
+      <h2 style="font-size:26px;font-weight:900;margin-bottom:28px;text-align:center">sign up to pablo</h2>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <input type="text" id="suName" placeholder="name" style="width:100%;padding:12px;background:#0a0a0a;border:1px solid #333;color:#fff;font-size:13px;outline:none" onfocus="this.style.borderColor='#666'" onblur="this.style.borderColor='#333'">
+        <input type="email" id="suEmail" placeholder="email" style="width:100%;padding:12px;background:#0a0a0a;border:1px solid #333;color:#fff;font-size:13px;outline:none" onfocus="this.style.borderColor='#666'" onblur="this.style.borderColor='#333'">
+        <input type="password" id="suPass" placeholder="password" style="width:100%;padding:12px;background:#0a0a0a;border:1px solid #333;color:#fff;font-size:13px;outline:none" onfocus="this.style.borderColor='#666'" onblur="this.style.borderColor='#333'">
+        <input type="password" id="suPass2" placeholder="confirm password" style="width:100%;padding:12px;background:#0a0a0a;border:1px solid #333;color:#fff;font-size:13px;outline:none" onfocus="this.style.borderColor='#666'" onblur="this.style.borderColor='#333'">
+        <button id="suBtn" onclick="doSignup()" style="padding:12px;background:#fff;color:#000;border:none;font-size:13px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px">SIGN UP</button>
+      </div>
+      <p style="text-align:center;font-size:13px;color:#666;margin-top:16px">already have an account? <a href="#" onclick="navTo('login')" style="color:#fff;font-weight:600">log in</a></p>
+    </div>
+  </div>
 
-        let currentView = 'landing';
+  <!-- LOG IN -->
+  <div id="view-login" style="display:none;padding:48px 16px;min-height:calc(100vh - 56px);align-items:flex-start;justify-content:center">
+    <div style="width:100%;max-width:400px">
+      <h2 style="font-size:26px;font-weight:900;margin-bottom:28px;text-align:center">log in to pablo</h2>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <input type="email" id="liEmail" placeholder="email" style="width:100%;padding:12px;background:#0a0a0a;border:1px solid #333;color:#fff;font-size:13px;outline:none" onfocus="this.style.borderColor='#666'" onblur="this.style.borderColor='#333'">
+        <input type="password" id="liPass" placeholder="password" style="width:100%;padding:12px;background:#0a0a0a;border:1px solid #333;color:#fff;font-size:13px;outline:none" onfocus="this.style.borderColor='#666'" onblur="this.style.borderColor='#333'">
+        <button id="liBtn" onclick="doLogin()" style="padding:12px;background:#fff;color:#000;border:none;font-size:13px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px">LOG IN</button>
+      </div>
+      <p style="text-align:center;font-size:13px;color:#666;margin-top:16px">need an account? <a href="#" onclick="navTo('signup')" style="color:#fff;font-weight:600">sign up</a></p>
+    </div>
+  </div>
 
-        /**
-         * Utility to display non-blocking messages.
-         * @param {string} message - The message to display.
-         * @param {string} type - 'success', 'error', or default (info).
-         */
-        function showMessage(message, type = 'info') {
-            let bgColor = 'bg-yellow-500';
-            let textColor = 'text-black';
+  <!-- HOME FEED -->
+  <div id="view-home" style="display:none;padding:32px 24px;max-width:960px;margin:0 auto">
+    <h2 style="font-size:22px;font-weight:900;margin-bottom:24px">home</h2>
+    <div id="homeFeed" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
+    <p id="homeEmpty" style="color:#555;font-size:14px;display:none">nothing here yet. upload something or follow some artists.</p>
+  </div>
 
-            if (type === 'error') {
-                bgColor = 'bg-red-600';
-                textColor = 'text-white';
-            } else if (type === 'success') {
-                bgColor = 'bg-green-500';
-                textColor = 'text-white';
-            }
+  <!-- LIBRARY -->
+  <div id="view-library" style="display:none;padding:32px 24px;max-width:960px;margin:0 auto">
+    <h2 style="font-size:22px;font-weight:900;margin-bottom:24px">library</h2>
+    <div style="display:flex;gap:0;border-bottom:1px solid #222;margin-bottom:24px">
+      <button class="tab-btn active" id="lib-tab-likes" onclick="switchLibTab('likes')">liked</button>
+      <button class="tab-btn" id="lib-tab-following" onclick="switchLibTab('following')">following</button>
+    </div>
+    <div id="libLikes"></div>
+    <div id="libFollowing" style="display:none"></div>
+  </div>
 
-            messageBox.className = `fixed top-20 right-6 p-4 rounded-lg ${bgColor} ${textColor} shadow-lg z-50 transition-opacity duration-300 opacity-0 hidden`;
-            messageBox.textContent = message;
-            messageBox.classList.remove('hidden', 'opacity-0');
-            messageBox.classList.add('opacity-100');
-            
-            setTimeout(() => {
-                messageBox.classList.remove('opacity-100');
-                messageBox.classList.add('opacity-0');
-                setTimeout(() => {
-                    messageBox.classList.add('hidden');
-                }, 300); 
-            }, 3000); 
+  <!-- SEARCH RESULTS -->
+  <div id="view-search" style="display:none;padding:32px 24px;max-width:960px;margin:0 auto">
+    <h2 style="font-size:22px;font-weight:900;margin-bottom:24px">search results for "<span id="searchQueryLabel"></span>"</h2>
+    <div id="searchResults" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
+    <p id="searchEmpty" style="color:#555;font-size:14px;display:none">no results found.</p>
+  </div>
+
+  <!-- PROFILE (own or others) -->
+  <div id="view-profile" style="display:none;padding:32px 24px;max-width:800px;margin:0 auto">
+    <div id="profileHeader" style="display:flex;align-items:flex-start;gap:24px;margin-bottom:32px">
+      <div style="position:relative">
+        <img id="profilePfpImg" src="https://upload.wikimedia.org/wikipedia/commons/0/03/Twitter_default_profile_400x400.png" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:2px solid #333">
+      </div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+          <h2 id="profileName" style="font-size:22px;font-weight:900;margin:0"></h2>
+          <img id="profileFlag" src="" style="display:none" class="flag-img" title="">
+          <span id="profileVerified" style="display:none" class="verified">✓</span>
+          <span id="profileProBadge" style="display:none"></span>
+          <button id="profileEditBtn" onclick="openProfileEdit()" style="display:none;background:none;border:1px solid #444;color:#ccc;padding:4px 10px;border-radius:4px;font-size:11px;cursor:pointer"><span class="material-icons" style="font-size:12px;vertical-align:middle">edit</span> edit</button>
+        </div>
+        <p id="profileBio" style="font-size:13px;color:#888;margin:0 0 12px"></p>
+        <div style="display:flex;gap:20px;margin-bottom:12px">
+          <div style="text-align:center"><p id="profileFollowers" style="font-size:18px;font-weight:700;margin:0">0</p><p style="font-size:11px;color:#666;margin:0">followers</p></div>
+          <div style="text-align:center"><p id="profileFollowing" style="font-size:18px;font-weight:700;margin:0">0</p><p style="font-size:11px;color:#666;margin:0">following</p></div>
+          <div style="text-align:center"><p id="profileTracks" style="font-size:18px;font-weight:700;margin:0">0</p><p style="font-size:11px;color:#666;margin:0">tracks</p></div>
+        </div>
+        <div id="profileActions"></div>
+      </div>
+    </div>
+    <div style="border-bottom:1px solid #222;margin-bottom:20px;display:flex;gap:0">
+      <button class="tab-btn active" id="ptab-tracks" onclick="switchProfileTab('tracks')">tracks</button>
+      <button class="tab-btn" id="ptab-albums" onclick="switchProfileTab('albums')">albums</button>
+    </div>
+    <div id="profileTracksGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
+    <div id="profileAlbumsGrid" style="display:none;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
+  </div>
+
+  <!-- TRACK/ALBUM DETAIL -->
+  <div id="view-detail" style="display:none;padding:32px 24px;max-width:700px;margin:0 auto">
+    <div id="detailContent"></div>
+  </div>
+
+  <!-- LIKES -->
+  <div id="view-likes" style="display:none;padding:32px 24px;max-width:960px;margin:0 auto">
+    <h2 style="font-size:22px;font-weight:900;margin-bottom:24px">liked</h2>
+    <div id="likesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px"></div>
+  </div>
+
+  <!-- FOLLOWING -->
+  <div id="view-following" style="display:none;padding:32px 24px;max-width:960px;margin:0 auto">
+    <h2 style="font-size:22px;font-weight:900;margin-bottom:24px">following</h2>
+    <div id="followingList"></div>
+  </div>
+
+  <!-- PRO -->
+  <div id="view-pro" style="display:none;padding:48px 24px;max-width:700px;margin:0 auto;text-align:center">
+    <h2 style="font-size:26px;font-weight:900;margin-bottom:8px">pablo pro</h2>
+    <p style="color:#666;font-size:14px;margin-bottom:40px">upgrade your account (it's free)</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:500px;margin:0 auto">
+      <div style="background:#111;border:1px solid #333;border-radius:8px;padding:24px;text-align:center">
+        <p style="font-size:11px;font-weight:700;color:#f5c518;letter-spacing:2px;margin:0 0 8px">PABLO PLUS</p>
+        <p style="font-size:32px;font-weight:900;margin:0 0 4px">$0</p>
+        <p style="font-size:12px;color:#666;margin:0 0 20px">/ month</p>
+        <div style="text-align:left;margin-bottom:20px;display:flex;flex-direction:column;gap:6px">
+          <p style="font-size:12px;color:#888;margin:0">&#10003; nothing</p>
+          <p style="font-size:12px;color:#888;margin:0">&#10003; nothing</p>
+        </div>
+        <button id="plusBtn" onclick="subscribePro('plus')" style="width:100%;padding:10px;background:#f5c518;color:#000;border:none;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer">get pablo plus</button>
+      </div>
+      <div style="background:#111;border:2px solid #ff6d00;border-radius:8px;padding:24px;text-align:center;position:relative">
+        <div style="position:absolute;top:-1px;left:50%;transform:translateX(-50%);background:#ff6d00;color:#000;font-size:10px;font-weight:700;padding:3px 10px;border-radius:0 0 4px 4px">BEST</div>
+        <p style="font-size:11px;font-weight:700;color:#ff6d00;letter-spacing:2px;margin:0 0 8px">PABLO PRO PLUS</p>
+        <p style="font-size:32px;font-weight:900;margin:0 0 4px">$0</p>
+        <p style="font-size:12px;color:#666;margin:0 0 20px">/ month</p>
+        <div style="text-align:left;margin-bottom:20px;display:flex;flex-direction:column;gap:6px">
+          <p style="font-size:12px;color:#888;margin:0">&#10003; nothing</p>
+          <p style="font-size:12px;color:#888;margin:0">&#10003; nothing</p>
+        </div>
+        <button id="proPlusBtn" onclick="subscribePro('proplus')" style="width:100%;padding:10px;background:#ff6d00;color:#000;border:none;border-radius:4px;font-size:13px;font-weight:700;cursor:pointer">get pablo pro plus</button>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer style="background:#000;border-top:1px solid #1a1a1a;padding:40px;text-align:center">
+  <p style="color:#444;font-size:13px;margin:0">made with hate by intergalaxity</p>
+</footer>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import{getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,updateEmail,updatePassword,deleteUser}from"https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import{getFirestore,collection,doc,setDoc,getDoc,getDocs,query,where,orderBy,limit,deleteDoc,updateDoc,arrayUnion,arrayRemove,addDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import{getStorage,ref,uploadString,getDownloadURL}from"https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+
+const FC={apiKey:"AIzaSyDt91IN8NhTwgcVdk8R_7aOzeMYvszKRyE",authDomain:"pablomusic1.firebaseapp.com",projectId:"pablomusic1",storageBucket:"pablomusic1.firebasestorage.app",messagingSenderId:"681554880367",appId:"1:681554880367:web:9c9760e7796f3c8956ea9a"};
+const fbApp=initializeApp(FC);
+const auth=getAuth(fbApp);
+const db=getFirestore(fbApp);
+
+// expose globals
+window.auth=auth;window.db=db;
+
+let CU=null; // current user
+let CUD=null; // current user data
+let searchFilter='all';
+let uploadType='track';
+let viewingUid=null;
+
+// Country names map (partial - for tooltips)
+const countryNames={US:'United States',GB:'Great Britain',JP:'Japan',DE:'Germany',FR:'France',CA:'Canada',AU:'Australia',BR:'Brazil',IT:'Italy',ES:'Spain',MX:'Mexico',KR:'South Korea',CN:'China',IN:'India',RU:'Russia',NL:'Netherlands',SE:'Sweden',NO:'Norway',DK:'Denmark',FI:'Finland',PL:'Poland',PT:'Portugal',AR:'Argentina',ZA:'South Africa',NG:'Nigeria',EG:'Egypt',TR:'Turkey',SA:'Saudi Arabia',AE:'UAE',TH:'Thailand',ID:'Indonesia',MY:'Malaysia',PH:'Philippines',VN:'Vietnam',PK:'Pakistan',BD:'Bangladesh',IQ:'Iraq',IR:'Iran',UA:'Ukraine',RO:'Romania',CZ:'Czech Republic',HU:'Hungary',GR:'Greece',BE:'Belgium',CH:'Switzerland',AT:'Austria',NZ:'New Zealand',SG:'Singapore',HK:'Hong Kong',TW:'Taiwan',IL:'Israel',MA:'Morocco',KE:'Kenya',GH:'Ghana',CL:'Chile',CO:'Colombia',PE:'Peru',VE:'Venezuela',CU:'Cuba',PR:'Puerto Rico',JM:'Jamaica',CR:'Costa Rica',PA:'Panama',GT:'Guatemala',HN:'Honduras',SV:'El Salvador',NI:'Nicaragua',DO:'Dominican Republic',TT:'Trinidad and Tobago',EC:'Ecuador',BO:'Bolivia',PY:'Paraguay',UY:'Uruguay',IC:'Iceland',IE:'Ireland'};
+
+function msg(text,type='info'){
+  const el=document.getElementById('msgBox');
+  el.textContent=text;
+  el.style.background=type==='error'?'#7f1d1d':type==='success'?'#14532d':'#1e293b';
+  el.style.color=type==='error'?'#fca5a5':type==='success'?'#86efac':'#e2e8f0';
+  el.style.opacity='1';el.style.pointerEvents='auto';
+  setTimeout(()=>{el.style.opacity='0';el.style.pointerEvents='none';},3500);
+}
+
+function showLoader(btn,orig){btn.disabled=true;btn.setAttribute('data-orig',orig||btn.textContent);btn.innerHTML='<div class="loader"></div>';}
+function hideLoader(btn){btn.disabled=false;btn.innerHTML=btn.getAttribute('data-orig')||'submit';}
+
+function allViews(){return['landing','signup','login','home','library','search','profile','detail','likes','following','pro'];}
+
+window.navTo=function(v){
+  allViews().forEach(id=>{
+    const el=document.getElementById('view-'+id);
+    if(el)el.style.display='none';
+  });
+  const target=document.getElementById('view-'+v);
+  if(target){
+    target.style.display=(v==='login'||v==='signup')?'flex':'block';
+  }
+  if(v==='home')loadHome();
+  if(v==='library')loadLibrary();
+  if(v==='likes')loadLikes();
+  if(v==='following')loadFollowingView();
+  if(v==='profile-self'){viewingUid=CU?CU.uid:null;navTo('profile');loadProfile(viewingUid);}
+  window.scrollTo(0,0);
+  document.getElementById('ctxMenu').classList.add('hidden');
+}
+
+// AUTH STATE
+onAuthStateChanged(auth,async user=>{
+  CU=user;
+  if(user){
+    document.getElementById('headerGuest').style.display='none';
+    document.getElementById('headerUser').style.display='flex';
+    // load user data
+    const snap=await getDoc(doc(db,'users',user.uid));
+    CUD=snap.exists()?snap.data():{};
+    // set pfp
+    document.getElementById('headerPfp').src=CUD.pfp||'https://upload.wikimedia.org/wikipedia/commons/0/03/Twitter_default_profile_400x400.png';
+    // detect ip/country if not set
+    if(!CUD.country){
+      try{
+        const r=await fetch('https://ipapi.co/json/');
+        const d=await r.json();
+        if(d.country_code){
+          await updateDoc(doc(db,'users',user.uid),{country:d.country_code.toLowerCase()});
+          CUD.country=d.country_code.toLowerCase();
         }
+      }catch(e){}
+    }
+    navTo('home');
+  }else{
+    CUD=null;
+    document.getElementById('headerGuest').style.display='flex';
+    document.getElementById('headerUser').style.display='none';
+    navTo('landing');
+  }
+});
 
-        /**
-         * Toggles the loading state of a button.
-         * @param {HTMLElement} button - The button element.
-         * @param {boolean} isLoading - Whether to show the loading spinner.
-         * @param {string} originalText - The original text of the button.
-         */
-        function toggleLoading(button, isLoading, originalText) {
-            button.disabled = isLoading;
-            if (isLoading) {
-                button.setAttribute('data-original-text', originalText || button.textContent);
-                button.innerHTML = '<div class="loader"></div>';
-            } else {
-                button.textContent = button.getAttribute('data-original-text') || 'Submit';
-                button.removeAttribute('data-original-text');
-            }
-        }
-        
-        /**
-         * Generates a time-based greeting (morning, afternoon, night).
-         * @returns {string} The greeting string.
-         */
-        function getGreeting() {
-            const hour = new Date().getHours();
-            if (hour < 5 || hour >= 22) { // 10 PM to 4:59 AM
-                return "good night";
-            } else if (hour < 12) { // 5 AM to 11:59 AM
-                return "good morning";
-            } else if (hour < 18) { // 12 PM to 5:59 PM
-                return "good afternoon";
-            } else { // 6 PM to 9:59 PM
-                return "good evening";
-            }
-        }
-        
-        /**
-         * Fetches the username and updates the dashboard greeting.
-         * @param {object} user - The authenticated Firebase user object.
-         */
-        async function updateDashboardContent(user) {
-            if (!user || !db) return;
+// SIGNUP
+window.doSignup=async function(){
+  const name=document.getElementById('suName').value.trim();
+  const email=document.getElementById('suEmail').value.trim();
+  const pass=document.getElementById('suPass').value;
+  const pass2=document.getElementById('suPass2').value;
+  if(!name||name.length<2){msg('name must be at least 2 characters','error');return;}
+  if(pass!==pass2){msg('passwords do not match','error');return;}
+  const btn=document.getElementById('suBtn');
+  showLoader(btn,'SIGN UP');
+  try{
+    // check username uniqueness
+    const uq=query(collection(db,'users'),where('username','==',name));
+    const usnap=await getDocs(uq);
+    if(!usnap.empty){msg('that name is taken','error');hideLoader(btn);return;}
+    const cred=await createUserWithEmailAndPassword(auth,email,pass);
+    await setDoc(doc(db,'users',cred.user.uid),{
+      username:name,email,pfp:'',bio:'',country:'',pro:'',verified:false,
+      followers:[],following:[],likes:[],createdAt:new Date().toISOString()
+    });
+    msg('welcome to pablo!','success');
+  }catch(e){
+    msg(e.code==='auth/email-already-in-use'?'email already in use':e.code==='auth/weak-password'?'password too weak':e.message,'error');
+  }finally{hideLoader(btn);}
+}
 
-            const greetingText = getGreeting();
-            
-            // Set immediate UI elements
-            currentUserIdSpan.textContent = user.uid;
-            authStatusText.textContent = `You are authenticated with UID: ${user.uid}`;
-            
-            // Set a temporary greeting while fetching data
-            dashboardGreetingElement.textContent = `${greetingText}, loading...`;
+// LOGIN
+window.doLogin=async function(){
+  const email=document.getElementById('liEmail').value.trim();
+  const pass=document.getElementById('liPass').value;
+  const btn=document.getElementById('liBtn');
+  showLoader(btn,'LOG IN');
+  try{
+    await signInWithEmailAndPassword(auth,email,pass);
+    msg('welcome back','success');
+  }catch(e){
+    msg('invalid email or password','error');
+  }finally{hideLoader(btn);}
+}
 
-            try {
-                // Fetch the username from the public collection where it was stored during sign up
-                const docRef = doc(db, USERNAME_COLLECTION_PATH, user.uid);
-                const docSnap = await getDoc(docRef); 
+// LOGOUT
+window.handleLogout=async function(){
+  await signOut(auth);
+  msg('fuck you','info');
+}
 
-                if (docSnap.exists()) {
-                    const userData = docSnap.data();
-                    // Use username from Firestore, fallback to a generic name
-                    const username = userData.username || 'friend';
-                    dashboardGreetingElement.textContent = `${greetingText}, ${username}!`;
-                } else {
-                    console.warn(`Username document not found for UID: ${user.uid}`);
-                    dashboardGreetingElement.textContent = `${greetingText}, new user!`;
-                }
-            } catch (error) {
-                console.error("Failed to fetch username:", error);
-                dashboardGreetingElement.textContent = `${greetingText}, friend!`;
-            }
-        }
+// CONTEXT MENU
+window.toggleCtxMenu=function(e){
+  e.stopPropagation();
+  const m=document.getElementById('ctxMenu');
+  if(m.classList.contains('hidden')){
+    const rect=e.target.getBoundingClientRect();
+    m.style.top=(rect.bottom+6)+'px';
+    m.style.right=(window.innerWidth-rect.right)+'px';
+    m.classList.remove('hidden');
+  }else{m.classList.add('hidden');}
+}
+document.addEventListener('click',()=>document.getElementById('ctxMenu').classList.add('hidden'));
 
+// SETTINGS
+window.openSettings=function(){document.getElementById('settingsModal').classList.remove('hidden');}
+window.closeSettings=function(){document.getElementById('settingsModal').classList.add('hidden');}
+window.doChangeEmail=async function(){
+  const v=document.getElementById('stNewEmail').value.trim();
+  if(!v){msg('enter an email','error');return;}
+  try{await updateEmail(CU,v);await updateDoc(doc(db,'users',CU.uid),{email:v});msg('email updated','success');}
+  catch(e){msg(e.message,'error');}
+}
+window.doChangePassword=async function(){
+  const v=document.getElementById('stNewPass').value;
+  if(!v||v.length<6){msg('password too short','error');return;}
+  try{await updatePassword(CU,v);msg('password updated','success');}
+  catch(e){msg(e.message,'error');}
+}
+window.setTheme=function(t){
+  if(t==='light'){document.body.style.background='#f5f5f5';document.body.style.color='#000';}
+  else{document.body.style.background='';document.body.style.color='';}
+}
+window.requestVerification=async function(){
+  await updateDoc(doc(db,'users',CU.uid),{verificationRequested:true});
+  msg('verification requested!','success');
+}
+window.deleteAccount=async function(){
+  if(!confirm('are you sure? this cannot be undone.'))return;
+  try{
+    await deleteDoc(doc(db,'users',CU.uid));
+    await deleteUser(CU);
+    msg('account deleted','info');
+  }catch(e){msg(e.message,'error');}
+}
 
-        /**
-         * Switches the visible view and scrolls to the top.
-         * @param {string} viewId - The ID of the view to show ('landing', 'signUp', 'logIn', or 'dashboard').
-         */
-        function setView(viewId) {
-            currentView = viewId;
-            landingView.classList.add('hidden');
-            signUpView.classList.add('hidden');
-            logInView.classList.add('hidden');
-            dashboardView.classList.add('hidden');
-            
-            if (viewId === 'landing') {
-                landingView.classList.remove('hidden');
-            } else if (viewId === 'signUp') {
-                signUpView.classList.remove('hidden');
-            } else if (viewId === 'logIn') {
-                logInView.classList.remove('hidden');
-            } else if (viewId === 'dashboard') {
-                dashboardView.classList.remove('hidden');
-                // Ensure dashboard data is updated when shown
-                if (auth.currentUser) {
-                    updateDashboardContent(auth.currentUser); // <-- Use the new function to update content
-                } else {
-                    currentUserIdSpan.textContent = "N/A";
-                    authStatusText.textContent = "Please log in to see your dashboard.";
-                    dashboardGreetingElement.textContent = "welcome back!";
-                }
-            }
-            window.scrollTo(0, 0); 
-        }
+// PROFILE EDIT
+window.openProfileEdit=function(){
+  document.getElementById('editUsername').value=CUD.username||'';
+  document.getElementById('editBio').value=CUD.bio||'';
+  document.getElementById('editCountry').value=(CUD.country||'').toUpperCase();
+  document.getElementById('editPfpPreview').src=CUD.pfp||'https://upload.wikimedia.org/wikipedia/commons/0/03/Twitter_default_profile_400x400.png';
+  window._newPfpBase64=null;
+  document.getElementById('profileEditModal').classList.remove('hidden');
+}
+window.closeProfileEdit=function(){document.getElementById('profileEditModal').classList.add('hidden');}
+window.previewPfp=function(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    window._newPfpBase64=ev.target.result;
+    document.getElementById('editPfpPreview').src=ev.target.result;
+  };reader.readAsDataURL(file);
+}
+window.saveProfileEdit=async function(){
+  const name=document.getElementById('editUsername').value.trim();
+  const bio=document.getElementById('editBio').value.trim();
+  const country=document.getElementById('editCountry').value.trim().toLowerCase();
+  if(!name){msg('name required','error');return;}
+  // check name uniqueness if changed
+  if(name!==CUD.username){
+    const uq=query(collection(db,'users'),where('username','==',name));
+    const usnap=await getDocs(uq);
+    if(!usnap.empty){msg('name taken','error');return;}
+  }
+  const updates={username:name,bio,country};
+  if(window._newPfpBase64)updates.pfp=window._newPfpBase64;
+  await updateDoc(doc(db,'users',CU.uid),updates);
+  Object.assign(CUD,updates);
+  if(updates.pfp)document.getElementById('headerPfp').src=updates.pfp;
+  msg('profile updated','success');
+  closeProfileEdit();
+  loadProfile(CU.uid);
+}
 
-        /**
-         * Updates the header UI based on the authentication state.
-         * @param {object | null} user - The Firebase user object or null.
-         */
-        function updateAuthUI(user) {
-            if (user) {
-                // User is signed in
-                signUpButton.classList.add('hidden');
-                logInButton.classList.add('hidden');
-                logOutButton.classList.remove('hidden');
-                currentUserId = user.uid;
-                
-                // Fetch and display dynamic dashboard content
-                updateDashboardContent(user);
+// PROFILE VIEW
+window.loadProfile=async function(uid){
+  if(!uid)return;
+  viewingUid=uid;
+  const snap=await getDoc(doc(db,'users',uid));
+  if(!snap.exists()){msg('user not found','error');return;}
+  const d=snap.data();
+  document.getElementById('profileName').textContent=d.username||'user';
+  document.getElementById('profileBio').textContent=d.bio||'';
+  document.getElementById('profilePfpImg').src=d.pfp||'https://upload.wikimedia.org/wikipedia/commons/0/03/Twitter_default_profile_400x400.png';
+  // flag
+  const flagEl=document.getElementById('profileFlag');
+  if(d.country&&d.country.length===2){
+    flagEl.src=`https://www.famfamfam.com/lab/icons/flags/images/${d.country.toLowerCase()}.png`;
+    flagEl.style.display='inline';
+    flagEl.title=countryNames[d.country.toUpperCase()]||d.country.toUpperCase();
+  }else{flagEl.style.display='none';}
+  // verified
+  document.getElementById('profileVerified').style.display=d.verified?'inline':'none';
+  // pro badge
+  const pb=document.getElementById('profileProBadge');
+  if(d.pro==='proplus'){pb.innerHTML='<span class="pro-star">★</span>';pb.style.display='inline';}
+  else if(d.pro==='plus'){pb.innerHTML='<span class="pro-gold">+</span>';pb.style.display='inline';}
+  else{pb.style.display='none';}
+  // stats
+  document.getElementById('profileFollowers').textContent=(d.followers||[]).length;
+  document.getElementById('profileFollowing').textContent=(d.following||[]).length;
+  // count tracks
+  const tSnap=await getDocs(query(collection(db,'tracks'),where('uid','==',uid)));
+  const aSnap=await getDocs(query(collection(db,'albums'),where('uid','==',uid)));
+  document.getElementById('profileTracks').textContent=tSnap.size+aSnap.size;
+  // edit btn
+  const editBtn=document.getElementById('profileEditBtn');
+  editBtn.style.display=(CU&&CU.uid===uid)?'inline-flex':'none';
+  // follow/unfollow
+  const actEl=document.getElementById('profileActions');
+  if(CU&&CU.uid!==uid){
+    const isFollowing=(CUD&&CUD.following||[]).includes(uid);
+    actEl.innerHTML=`<button onclick="toggleFollow('${uid}')" style="padding:6px 16px;background:${isFollowing?'transparent':'#fff'};color:${isFollowing?'#fff':'#000'};border:1px solid ${isFollowing?'#444':'#fff'};border-radius:4px;font-size:12px;font-weight:700;cursor:pointer">${isFollowing?'following':'follow'}</button>`;
+  }else{actEl.innerHTML='';}
+  // load tracks/albums
+  loadProfileContent(uid);
+  navTo('profile');
+}
 
-                // If on an auth form, redirect to dashboard
-                if (currentView === 'signUp' || currentView === 'logIn' || currentView === 'landing') {
-                    setView('dashboard');
-                }
-            } else {
-                // User is signed out
-                signUpButton.classList.remove('hidden');
-                logInButton.classList.remove('hidden');
-                logOutButton.classList.add('hidden');
-                currentUserId = null;
-                // If on dashboard, redirect to landing page
-                if (currentView === 'dashboard') {
-                    setView('landing');
-                }
-            }
-        }
-        
-        /**
-         * Initializes Firebase and sets up the Auth state listener.
-         */
-        async function initializeFirebase() {
-            try {
-                if (Object.keys(firebaseConfig).length === 0) {
-                    console.error("Firebase config is missing.");
-                    showMessage("Firebase not configured.", 'error');
-                    return;
-                }
+window.loadProfileContent=async function(uid){
+  const tSnap=await getDocs(query(collection(db,'tracks'),where('uid','==',uid),orderBy('createdAt','desc')));
+  const aSnap=await getDocs(query(collection(db,'albums'),where('uid','==',uid),orderBy('createdAt','desc')));
+  const tGrid=document.getElementById('profileTracksGrid');
+  const aGrid=document.getElementById('profileAlbumsGrid');
+  tGrid.innerHTML='';aGrid.innerHTML='';
+  tSnap.forEach(d=>tGrid.appendChild(makeCard(d.id,d.data(),'track')));
+  aSnap.forEach(d=>aGrid.appendChild(makeCard(d.id,d.data(),'album')));
+}
 
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
+window.switchProfileTab=function(t){
+  document.getElementById('ptab-tracks').classList.toggle('active',t==='tracks');
+  document.getElementById('ptab-albums').classList.toggle('active',t==='albums');
+  document.getElementById('profileTracksGrid').style.display=t==='tracks'?'grid':'none';
+  document.getElementById('profileAlbumsGrid').style.display=t==='albums'?'grid':'none';
+}
 
-                // 3. AUTHENTICATION LISTENER AND INITIAL SIGN-IN
-                onAuthStateChanged(auth, (user) => {
-                    isAuthReady = true;
-                    updateAuthUI(user);
-                    if (!user) {
-                        // If signed out, ensure view is not blocked
-                        setView(currentView === 'dashboard' ? 'landing' : currentView);
-                    }
-                });
+window.toggleFollow=async function(uid){
+  if(!CU){msg('log in to follow','error');return;}
+  const isF=(CUD.following||[]).includes(uid);
+  if(isF){
+    await updateDoc(doc(db,'users',CU.uid),{following:arrayRemove(uid)});
+    await updateDoc(doc(db,'users',uid),{followers:arrayRemove(CU.uid)});
+    CUD.following=(CUD.following||[]).filter(x=>x!==uid);
+  }else{
+    await updateDoc(doc(db,'users',CU.uid),{following:arrayUnion(uid)});
+    await updateDoc(doc(db,'users',uid),{followers:arrayUnion(CU.uid)});
+    CUD.following=[...(CUD.following||[]),uid];
+  }
+  loadProfile(uid);
+}
 
-                // Sign in with custom token if present
-                if (initialAuthToken) {
-                    try {
-                        await signInWithCustomToken(auth, initialAuthToken);
-                        console.log("Signed in with custom token.");
-                    } catch (tokenError) {
-                        // Catching the specific custom-token-mismatch error here to prevent the app from failing.
-                        console.warn("Initial custom token sign-in failed (likely 'auth/custom-token-mismatch'). Proceeding with manual sign-in flow.");
-                        // The app can continue functioning for manual email/password auth
-                    }
-                }
-                // No automatic anonymous sign-in - users will sign up/log in manually
+// MAKE CARD
+function makeCard(id,d,type){
+  const div=document.createElement('div');
+  div.className='card';
+  div.onclick=()=>openDetail(id,d,type);
+  const cover=d.cover||'';
+  div.innerHTML=`
+    <div style="width:100%;aspect-ratio:1;background:#1a1a1a;overflow:hidden">
+      ${cover?`<img src="${cover}" style="width:100%;height:100%;object-fit:cover">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center"><span class="material-icons" style="font-size:48px;color:#333">${type==='album'?'album':'audiotrack'}</span></div>`}
+    </div>
+    <div style="padding:10px">
+      <p style="font-size:13px;font-weight:700;margin:0 0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.title||'untitled'}</p>
+      <p style="font-size:11px;color:#666;margin:0">${type}</p>
+    </div>`;
+  return div;
+}
 
-            } catch (error) {
-                console.error("Firebase initialization or general failure:", error); 
-                showMessage(`Initialization failed: ${error.message}`, 'error');
-            }
-        }
+// DETAIL VIEW
+window.openDetail=async function(id,d,type){
+  viewingDetailId=id;viewingDetailType=type;
+  const el=document.getElementById('detailContent');
+  const ownerSnap=await getDoc(doc(db,'users',d.uid||''));
+  const owner=ownerSnap.exists()?ownerSnap.data():{};
+  const liked=(CUD&&CUD.likes||[]).includes(id);
+  el.innerHTML=`
+    <div style="display:flex;gap:20px;margin-bottom:28px;align-items:flex-start;flex-wrap:wrap">
+      <div style="width:180px;height:180px;background:#1a1a1a;border-radius:4px;overflow:hidden;flex-shrink:0">
+        ${d.cover?`<img src="${d.cover}" style="width:100%;height:100%;object-fit:cover">`:`<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center"><span class="material-icons" style="font-size:64px;color:#333">${type==='album'?'album':'audiotrack'}</span></div>`}
+      </div>
+      <div style="flex:1">
+        <p style="font-size:11px;color:#666;margin:0 0 4px;text-transform:uppercase;letter-spacing:1px">${type}</p>
+        <h2 style="font-size:24px;font-weight:900;margin:0 0 8px">${d.title||'untitled'}</h2>
+        <a href="#" onclick="loadProfile('${d.uid}')" style="font-size:14px;color:#aaa;text-decoration:none">${owner.username||'unknown'}</a>
+        <p style="font-size:13px;color:#666;margin:8px 0">${d.genre||''}</p>
+        <p style="font-size:13px;color:#888;margin:0 0 16px">${d.desc||''}</p>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button onclick="toggleLike('${id}')" style="padding:8px 16px;background:${liked?'#fff':'transparent'};color:${liked?'#000':'#fff'};border:1px solid #444;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer">
+            ${liked?'♥ liked':'♡ like'}
+          </button>
+          ${type==='album'&&d.trackNames?`<span style="font-size:12px;color:#666">${d.trackNames.split('\n').filter(Boolean).length} tracks</span>`:''}
+        </div>
+        ${d.audio?`<audio controls src="${d.audio}" style="width:100%;margin-top:12px;filter:invert(1)"></audio>`:''}
+      </div>
+    </div>
+    ${type==='album'&&d.trackNames?`
+    <div style="margin-bottom:28px">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:12px;color:#888">tracks</h3>
+      ${d.trackNames.split('\n').filter(Boolean).map((t,i)=>`<div style="padding:10px 0;border-bottom:1px solid #1a1a1a;display:flex;align-items:center;gap:12px"><span style="color:#555;font-size:12px;min-width:20px">${i+1}</span><span style="font-size:13px">${t}</span></div>`).join('')}
+    </div>`:''}
+    <div>
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px;color:#888">comments</h3>
+      <div id="commentsList" style="margin-bottom:16px"></div>
+      ${CU?`
+      <div style="display:flex;gap:8px">
+        <input id="commentInput" placeholder="write a comment..." style="flex:1;padding:10px;background:#111;border:1px solid #333;color:#fff;font-size:13px;border-radius:4px;outline:none">
+        <button onclick="postComment('${id}','${type}')" style="padding:10px 16px;background:#fff;color:#000;border:none;border-radius:4px;font-size:12px;font-weight:700;cursor:pointer">post</button>
+      </div>`:'<p style="font-size:13px;color:#555"><a href="#" onclick="navTo(\'login\')" style="color:#fff">log in</a> to comment</p>'}
+    </div>`;
+  loadComments(id,type);
+  navTo('detail');
+}
+window.viewingDetailId=null;window.viewingDetailType=null;
 
-        // --- AUTH HANDLERS ---
+window.toggleLike=async function(id){
+  if(!CU){msg('log in to like','error');return;}
+  const liked=(CUD.likes||[]).includes(id);
+  if(liked){
+    await updateDoc(doc(db,'users',CU.uid),{likes:arrayRemove(id)});
+    CUD.likes=(CUD.likes||[]).filter(x=>x!==id);
+  }else{
+    await updateDoc(doc(db,'users',CU.uid),{likes:arrayUnion(id)});
+    CUD.likes=[...(CUD.likes||[]),id];
+  }
+  // re-render
+  if(window.viewingDetailId)openDetail(window.viewingDetailId,{},window.viewingDetailType||'track');
+}
 
-        /**
-         * Handles user sign-up via email and password, including checking for unique usernames
-         * in Firestore before creation.
-         */
-        async function handleSignUp(e) {
-            e.preventDefault();
-            const email = e.target.querySelector('#signUpEmail').value.trim();
-            const password = e.target.querySelector('#signUpPassword').value;
-            const confirmPassword = e.target.querySelector('#signUpConfirmPassword').value;
-            const username = e.target.querySelector('#signUpUsername').value.trim();
-            const originalText = signUpSubmitButton.textContent;
+window.postComment=async function(itemId,type){
+  const text=document.getElementById('commentInput').value.trim();
+  if(!text)return;
+  await addDoc(collection(db,'comments'),{
+    itemId,type,uid:CU.uid,username:CUD.username||'user',text,
+    createdAt:new Date().toISOString()
+  });
+  document.getElementById('commentInput').value='';
+  loadComments(itemId,type);
+}
+window.loadComments=async function(itemId,type){
+  const el=document.getElementById('commentsList');
+  if(!el)return;
+  const snap=await getDocs(query(collection(db,'comments'),where('itemId','==',itemId),orderBy('createdAt','desc'),limit(50)));
+  el.innerHTML='';
+  if(snap.empty){el.innerHTML='<p style="font-size:13px;color:#555;margin:0 0 12px">no comments yet.</p>';return;}
+  snap.forEach(d=>{
+    const c=d.data();
+    const div=document.createElement('div');
+    div.className='comment-item';
+    div.innerHTML=`<span style="font-size:12px;font-weight:700;color:#ccc">${c.username}</span><span style="font-size:12px;color:#888;margin-left:8px">${c.text}</span>`;
+    el.appendChild(div);
+  });
+}
 
-            // Basic Form Validation
-            if (password !== confirmPassword) {
-                showMessage("Passwords do not match.", 'error');
-                return;
-            }
-            if (username.length < 3) {
-                showMessage("Username must be at least 3 characters long.", 'error');
-                return;
-            }
+// UPLOAD
+window.openUpload=function(){
+  if(!CU){navTo('login');return;}
+  document.getElementById('uploadModal').classList.remove('hidden');
+}
+window.closeUpload=function(){document.getElementById('uploadModal').classList.add('hidden');}
+window.setUploadType=function(t){
+  uploadType=t;
+  document.getElementById('uploadTypeTrack').style.background=t==='track'?'#fff':'#1a1a1a';
+  document.getElementById('uploadTypeTrack').style.color=t==='track'?'#000':'#fff';
+  document.getElementById('uploadTypeAlbum').style.background=t==='album'?'#fff':'#1a1a1a';
+  document.getElementById('uploadTypeAlbum').style.color=t==='album'?'#000':'#fff';
+  document.getElementById('albumTracksSection').style.display=t==='album'?'block':'none';
+}
+window.previewCover=function(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    window._coverBase64=ev.target.result;
+    const img=document.getElementById('uploadCoverPreview');
+    img.src=ev.target.result;img.style.display='block';
+    document.getElementById('uploadCoverText').textContent='cover selected';
+  };r.readAsDataURL(file);
+}
+window.previewAudio=function(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{window._audioBase64=ev.target.result;document.getElementById('uploadAudioText').textContent=file.name;};
+  r.readAsDataURL(file);
+}
+window.doUpload=async function(){
+  const title=document.getElementById('uploadTitle').value.trim();
+  if(!title){msg('enter a title','error');return;}
+  if(!window._audioBase64){msg('select an audio file','error');return;}
+  const btn=document.getElementById('uploadSubmitBtn');
+  showLoader(btn,'upload');
+  try{
+    const data={
+      uid:CU.uid,
+      username:CUD.username||'user',
+      title,
+      desc:document.getElementById('uploadDesc').value.trim(),
+      genre:document.getElementById('uploadGenre').value.trim(),
+      cover:window._coverBase64||'',
+      audio:window._audioBase64,
+      createdAt:new Date().toISOString()
+    };
+    if(uploadType==='album'){
+      data.trackNames=document.getElementById('uploadTrackNames').value.trim();
+      await addDoc(collection(db,'albums'),data);
+    }else{
+      await addDoc(collection(db,'tracks'),data);
+    }
+    msg('uploaded!','success');
+    closeUpload();
+    window._coverBase64=null;window._audioBase64=null;
+    document.getElementById('uploadTitle').value='';
+    document.getElementById('uploadDesc').value='';
+    document.getElementById('uploadGenre').value='';
+    document.getElementById('uploadAudioText').textContent='click to select audio';
+    document.getElementById('uploadCoverText').textContent='click to select cover image';
+    document.getElementById('uploadCoverPreview').style.display='none';
+  }catch(e){msg(e.message,'error');}
+  finally{hideLoader(btn);}
+}
 
-            toggleLoading(signUpSubmitButton, true, originalText);
+// HOME FEED
+window.loadHome=async function(){
+  const el=document.getElementById('homeFeed');
+  const empty=document.getElementById('homeEmpty');
+  el.innerHTML='<p style="color:#555;font-size:13px">loading...</p>';
+  const tSnap=await getDocs(query(collection(db,'tracks'),orderBy('createdAt','desc'),limit(40)));
+  const aSnap=await getDocs(query(collection(db,'albums'),orderBy('createdAt','desc'),limit(20)));
+  el.innerHTML='';
+  let count=0;
+  tSnap.forEach(d=>{el.appendChild(makeCard(d.id,d.data(),'track'));count++;});
+  aSnap.forEach(d=>{el.appendChild(makeCard(d.id,d.data(),'album'));count++;});
+  empty.style.display=count===0?'block':'none';
+}
 
-            try {
-                // 1. CHECK FIREBASE FOR DUPLICATE USERNAME
-                const usernamesRef = collection(db, USERNAME_COLLECTION_PATH);
-                // Create a query to check if a document exists where the 'username' field equals the input username
-                const usernameQuery = query(usernamesRef, where("username", "==", username));
-                const snapshot = await getDocs(usernameQuery);
+// LIBRARY
+window.switchLibTab=function(t){
+  document.getElementById('lib-tab-likes').classList.toggle('active',t==='likes');
+  document.getElementById('lib-tab-following').classList.toggle('active',t==='following');
+  document.getElementById('libLikes').style.display=t==='likes'?'grid':'none';
+  document.getElementById('libFollowing').style.display=t==='following'?'block':'none';
+}
+window.loadLibrary=async function(){
+  if(!CU)return;
+  // likes
+  const likesEl=document.getElementById('libLikes');
+  likesEl.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px';
+  likesEl.innerHTML='';
+  const likes=CUD&&CUD.likes||[];
+  if(likes.length===0){likesEl.innerHTML='<p style="color:#555;font-size:13px;grid-column:1/-1">no liked songs yet.</p>';}
+  else{
+    for(const id of likes.slice(0,30)){
+      let snap=await getDoc(doc(db,'tracks',id));
+      if(!snap.exists())snap=await getDoc(doc(db,'albums',id));
+      if(snap.exists())likesEl.appendChild(makeCard(snap.id,snap.data(),snap.ref.path.includes('albums')?'album':'track'));
+    }
+  }
+  // following
+  const followingEl=document.getElementById('libFollowing');
+  const following=CUD&&CUD.following||[];
+  followingEl.innerHTML='';
+  if(following.length===0){followingEl.innerHTML='<p style="color:#555;font-size:13px">not following anyone yet.</p>';return;}
+  for(const uid of following.slice(0,20)){
+    const snap=await getDoc(doc(db,'users',uid));
+    if(!snap.exists())continue;
+    const d=snap.data();
+    const div=document.createElement('div');
+    div.style.cssText='display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #1a1a1a;cursor:pointer';
+    div.onclick=()=>loadProfile(uid);
+    div.innerHTML=`<img src="${d.pfp||'https://upload.wikimedia.org/wikipedia/commons/0/03/Twitter_default_profile_400x400.png'}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid #333"><span style="font-size:14px;font-weight:600">${d.username||'user'}</span>`;
+    followingEl.appendChild(div);
+  }
+}
 
-                if (!snapshot.empty) {
-                    // Username found in Firestore! (This is where the error should have been caught)
-                    showMessage(`The username "${username}" is already taken. Please choose another.`, 'error');
-                    return; // Stop execution before calling Firebase Auth
-                }
+window.loadLikes=async function(){
+  if(!CU)return;
+  const el=document.getElementById('likesGrid');
+  el.innerHTML='';
+  const likes=CUD&&CUD.likes||[];
+  if(!likes.length){el.innerHTML='<p style="color:#555;font-size:13px">no liked songs.</p>';return;}
+  for(const id of likes.slice(0,30)){
+    let snap=await getDoc(doc(db,'tracks',id));
+    const isAlbum=!snap.exists();
+    if(isAlbum)snap=await getDoc(doc(db,'albums',id));
+    if(snap.exists())el.appendChild(makeCard(snap.id,snap.data(),isAlbum?'album':'track'));
+  }
+}
 
-                // 2. CREATE USER IN FIREBASE AUTH
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
+window.loadFollowingView=async function(){
+  if(!CU)return;
+  const el=document.getElementById('followingList');
+  el.innerHTML='';
+  const following=CUD&&CUD.following||[];
+  if(!following.length){el.innerHTML='<p style="color:#555;font-size:13px">not following anyone.</p>';return;}
+  for(const uid of following){
+    const snap=await getDoc(doc(db,'users',uid));
+    if(!snap.exists())continue;
+    const d=snap.data();
+    const div=document.createElement('div');
+    div.style.cssText='display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #1a1a1a;cursor:pointer';
+    div.onclick=()=>loadProfile(uid);
+    div.innerHTML=`<img src="${d.pfp||'https://upload.wikimedia.org/wikipedia/commons/0/03/Twitter_default_profile_400x400.png'}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid #333"><span style="font-size:14px;font-weight:600">${d.username||'user'}</span>`;
+    el.appendChild(div);
+  }
+}
 
-                // 3. SAVE UNIQUE USERNAME MAPPING TO FIRESTORE
-                // The document ID is the user's UID for easy lookup and linking.
-                await setDoc(doc(usernamesRef, user.uid), {
-                    userId: user.uid,
-                    username: username,
-                    email: user.email,
-                    createdAt: new Date().toISOString()
-                });
+// SEARCH
+window.setSearchFilter=function(f){
+  searchFilter=f;
+  ['all','tracks','albums','people'].forEach(x=>{
+    const b=document.getElementById('sf-'+x);
+    if(b){b.style.background=x===f?'#fff':'none';b.style.color=x===f?'#000':'#888';b.style.border=x===f?'none':'1px solid #333';}
+  });
+}
+window.doSearch=async function(){
+  const q=document.getElementById('searchInput').value.trim().toLowerCase();
+  if(!q)return;
+  document.getElementById('searchQueryLabel').textContent=q;
+  const results=document.getElementById('searchResults');
+  const empty=document.getElementById('searchEmpty');
+  results.innerHTML='<p style="color:#555;font-size:13px">searching...</p>';
+  navTo('search');
+  let count=0;results.innerHTML='';
+  if(searchFilter==='all'||searchFilter==='tracks'){
+    const snap=await getDocs(collection(db,'tracks'));
+    snap.forEach(d=>{
+      const data=d.data();
+      if((data.title||'').toLowerCase().includes(q)||(data.username||'').toLowerCase().includes(q)){
+        results.appendChild(makeCard(d.id,data,'track'));count++;
+      }
+    });
+  }
+  if(searchFilter==='all'||searchFilter==='albums'){
+    const snap=await getDocs(collection(db,'albums'));
+    snap.forEach(d=>{
+      const data=d.data();
+      if((data.title||'').toLowerCase().includes(q)||(data.username||'').toLowerCase().includes(q)){
+        results.appendChild(makeCard(d.id,data,'album'));count++;
+      }
+    });
+  }
+  if(searchFilter==='all'||searchFilter==='people'){
+    const snap=await getDocs(collection(db,'users'));
+    snap.forEach(d=>{
+      const data=d.data();
+      if((data.username||'').toLowerCase().includes(q)){
+        const div=document.createElement('div');
+        div.className='card';div.style.display='flex';div.style.alignItems='center';div.style.gap='12px';div.style.padding='12px';
+        div.onclick=()=>loadProfile(d.id);
+        div.innerHTML=`<img src="${data.pfp||'https://upload.wikimedia.org/wikipedia/commons/0/03/Twitter_default_profile_400x400.png'}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:1px solid #333"><div><p style="font-size:14px;font-weight:700;margin:0">${data.username||'user'}</p><p style="font-size:11px;color:#666;margin:0">profile</p></div>`;
+        results.appendChild(div);count++;
+      }
+    });
+  }
+  empty.style.display=count===0?'block':'none';
+}
 
-                showMessage(`Account created successfully. Welcome, ${username}!`, 'success');
-                e.target.reset(); // Clear form
+// PRO
+window.subscribePro=async function(tier){
+  if(!CU){navTo('login');return;}
+  await updateDoc(doc(db,'users',CU.uid),{pro:tier});
+  CUD.pro=tier;
+  msg(`you are now ${tier==='proplus'?'pablo pro plus ★':'pablo plus +'}`,'success');
+  const icon=tier==='proplus'?'★':'+'
+  document.getElementById('plusBtn').disabled=tier==='plus';
+  document.getElementById('proPlusBtn').disabled=tier==='proplus';
+}
 
-            } catch (error) {
-                console.error("Sign Up Failed:", error);
-                
-                let displayMessage = "An unknown error occurred during sign up.";
+// HOME LINK
+document.getElementById('homeLink').addEventListener('click',e=>{
+  e.preventDefault();
+  CU?navTo('home'):navTo('landing');
+});
 
-                // Enhanced Error Code Handling
-                switch (error.code) {
-                    case 'auth/email-already-in-use':
-                        displayMessage = "This email is already taken. Please try logging in.";
-                        break;
-                    case 'auth/weak-password':
-                        displayMessage = "The password is too weak. It must be at least 6 characters long.";
-                        break;
-                    case 'auth/invalid-email':
-                        displayMessage = "The email address is not valid.";
-                        break;
-                    default:
-                        // Fallback for other less common errors
-                        displayMessage = `Sign Up Failed: ${error.message}`;
-                }
-                
-                showMessage(displayMessage, 'error');
-                
-            } finally {
-                toggleLoading(signUpSubmitButton, false, originalText);
-            }
-        }
-
-        /**
-         * Handles user log-in via email and password.
-         */
-        async function handleLogIn(e) {
-            e.preventDefault();
-            const email = e.target.querySelector('#logInEmail').value;
-            const password = e.target.querySelector('#logInPassword').value;
-            const originalText = logInSubmitButton.textContent;
-
-            toggleLoading(logInSubmitButton, true, originalText);
-
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-                showMessage("Logged in successfully. Welcome back!", 'success');
-                e.target.reset(); // Clear form
-                // UI will be updated by onAuthStateChanged listener
-            } catch (error) {
-                console.error("Log In Failed:", error);
-                
-                let displayMessage = "Log in failed.";
-                
-                // Enhanced Login Error Handling
-                switch (error.code) {
-                    case 'auth/user-not-found':
-                    case 'auth/wrong-password':
-                    case 'auth/invalid-credential': // Modern error for general bad credentials
-                        displayMessage = "Invalid email or password.";
-                        break;
-                    case 'auth/invalid-email':
-                        displayMessage = "The email address format is invalid.";
-                        break;
-                    default:
-                        displayMessage = `Log In Failed: ${error.message}`;
-                }
-                
-                showMessage(displayMessage, 'error');
-            } finally {
-                
-                toggleLoading(logInSubmitButton, false, originalText);
-            }
-        }
-
-        /**
-         * Handles user log-out.
-         */
-        async function handleLogOut() {
-            try {
-                await signOut(auth);
-                showMessage("fuck you", 'info');
-                // UI and view update handled by onAuthStateChanged listener
-            } catch (error) {
-                console.error("Log Out Failed:", error);
-                showMessage(`Log Out Failed: ${error.message}`, 'error');
-            }
-        }
-
-        // --- EVENT LISTENERS ---
-        
-        // 1. Navigation Clicks
-        homeLink.addEventListener('click', (e) => { 
-            e.preventDefault(); 
-            // If logged in, go to dashboard, otherwise landing
-            setView(auth.currentUser ? 'dashboard' : 'landing');
-        });
-        
-        // Header Buttons
-        signUpButton.addEventListener('click', () => setView('signUp'));
-        logInButton.addEventListener('click', () => setView('logIn'));
-        logOutButton.addEventListener('click', handleLogOut); // Log Out handler
-
-        // Links inside Forms
-        document.getElementById('showLoginLink').addEventListener('click', (e) => { e.preventDefault(); setView('logIn'); }); 
-        document.getElementById('showSignUpLinkFromLogin').addEventListener('click', (e) => { e.preventDefault(); setView('signUp'); });
-
-        // 2. Auth Form Submissions (Now using Firebase Handlers)
-        signUpForm.addEventListener('submit', handleSignUp);
-        logInForm.addEventListener('submit', handleLogIn);
-
-
-        // 3. Search Form Submission (Kept placeholder logic)
-        document.getElementById('searchForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const searchInput = document.getElementById('searchInput');
-            const query = searchInput.value.trim();
-            
-            if (query) {
-                showMessage(`Searching pablo for: "${query}".`);
-                searchInput.value = '';
-            } else {
-                showMessage("Please enter a search term.");
-            }
-        });
-
-
-        // --- Initial Application Setup ---
-        initializeFirebase();
-        setView('landing'); 
-    </script>
+// show landing initially
+navTo('landing');
+</script>
 </body>
 </html>
