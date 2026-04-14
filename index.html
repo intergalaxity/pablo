@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- Ensure responsive behavior across all devices -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pablo</title>
+    <!-- Favicon: Added the "p" character favicon using an SVG Data URI -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>p</text></svg>">
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Optional: Ensure the html and body take up the full viewport height */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            /* Use Inter font for a modern look */
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom loader spinner */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3b82f6; /* Blue-500 */
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<!-- 
+    The body element uses Tailwind classes:
+    - min-h-screen: Ensures it takes at least the full height of the viewport.
+    - w-full: Ensures it takes the full width.
+    - bg-neutral-900: Provides the requested very deep dark gray color. 
+-->
+<body class="w-full bg-neutral-900">
+
+    <!-- Message Box Element: Used to display non-blocking messages (like search results or form status) instead of alert() -->
+    <div id="messageBox" class="fixed top-20 right-6 p-4 rounded-lg bg-yellow-500 text-black shadow-lg z-50 transition-opacity duration-300 opacity-0 hidden"></div>
+
+    <!-- Black Header (fixed at the top) -->
+    <header class="fixed top-0 left-0 w-full h-16 bg-black z-10 flex justify-between items-center px-6 shadow-2xl">
+        
+        <!-- Title/Logo for Pablo - Clicking returns to landing page -->
+        <a href="#" id="homeLink" class="text-2xl font-extrabold text-white rounded-md hover:text-neutral-300 transition-colors">pablo</a>
+
+        <!-- Search Bar Container (Gray Bar) -->
+        <form id="searchForm" class="flex-1 max-w-sm mx-6"> 
+            <!-- Reduced height (h-8), removed rounding (rounded-full -> rounded-none) -->
+            <div class="flex items-center bg-neutral-800 rounded-none h-8 px-3 space-x-2">
+                <!-- Magnifying Glass Icon (Inline SVG) - Reduced size to w-4 h-4 -->
+                <svg class="w-4 h-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+                <!-- Search Input (Functional element) -->
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="search" 
+                    class="bg-transparent text-neutral-200 text-xs font-medium w-full focus:outline-none placeholder-neutral-400" 
+                />
+            </div>
+        </form>
+
+        <!-- Authentication Buttons Container -->
+        <div id="authContainer" class="flex space-x-4">
+            <!-- Sign Up Button -->
+            <button id="signUpButton" class="text-white text-sm font-semibold border border-white py-1.5 px-4 rounded-full hover:bg-neutral-800 transition-colors">
+                sign up
+            </button>
+            
+            <!-- Log In Button -->
+            <button id="logInButton" class="bg-white text-black text-sm font-bold py-1.5 px-4 rounded-full hover:bg-neutral-300 transition-colors">
+                log in
+            </button>
+
+            <!-- Log Out Button (Hidden initially, shown when authenticated) -->
+            <button id="logOutButton" class="bg-red-600 text-white text-sm font-bold py-1.5 px-4 rounded-full hover:bg-red-700 transition-colors hidden">
+                log out
+            </button>
+        </div>
+    </header>
+    
+    <!-- 
+        VIEW CONTAINER: This division will hold all content pages. 
+        JavaScript toggles which child is visible. 
+        The top margin (mt-16) pushes content down past the fixed header.
+    -->
+    <div class="mt-16">
+
+        <!-- ---------------------------------------------------------------------- -->
+        <!-- LANDING VIEW CONTAINER (Default/Initial View) -->
+        <!-- ---------------------------------------------------------------------- -->
+        <div id="landingView" class="w-full">
+            
+            <!-- Main Content Area -->
+            <main class="w-full h-[calc(100vh-4rem)] flex items-center justify-center">
+                <p class="text-white text-3xl font-light text-center max-w-xl p-4">
+                    music
+                </p>
+            </main>
+
+            <!-- Testimonials Section -->
+            <section class="w-full bg-neutral-900 p-12 md:p-20 border-t border-neutral-800">
+                <h2 class="text-3xl text-left text-white font-extrabold mb-12 max-w-4xl mx-auto">testimonials (reviews in english)</h2>
+                
+                <div class="max-w-4xl mx-auto space-y-12">
+                    <div class="space-y-2">
+                        <p class="text-white text-xl italic font-light">"10/10 it has the best ui design i've ever seen actually"</p>
+                        <p class="text-sm font-semibold text-neutral-400">— operation</p>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="text-white text-xl italic font-light">"it's nonchalant as fuck"</p>
+                        <p class="text-sm font-semibold text-neutral-400">— mxhstygd</p>
+                    </div>
+                    <div class="space-y-2">
+                        <p class="text-white text-xl italic font-light">"pablo"</p>
+                        <p class="text-sm font-semibold text-neutral-400">— pablo</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Statistic Section -->
+            <section class="w-full bg-neutral-900 p-12 md:p-20 text-center border-t border-neutral-800">
+                <div class="p-4">
+                    <p class="text-white text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight">
+                        pablo is used by 8.142 billion users*
+                    </p>
+                    <p class="text-neutral-400 text-sm italic mt-2">
+                        *according to me
+                    </p>
+                </div>
+            </section>
+        </div>
+
+        <!-- ---------------------------------------------------------------------- -->
+        <!-- SIGN UP VIEW CONTAINER -->
+        <!-- ---------------------------------------------------------------------- -->
+        <div id="signUpView" class="hidden w-full pt-12 pb-16 min-h-[calc(100vh-4rem)] flex justify-center items-start">
+            <div class="w-full max-w-md px-4">
+                <h2 class="text-3xl font-extrabold text-white mb-8 text-center">sign up to pablo</h2>
+                
+                <form id="signUpForm" class="space-y-4">
+                    <!-- This input is critical for the Firestore username check -->
+                    <input type="text" id="signUpUsername" placeholder="name" required class="w-full p-4 bg-neutral-900 text-white border border-white focus:ring-1 focus:ring-white focus:outline-none placeholder-neutral-500 text-sm"/>
+                    
+                    <input type="email" id="signUpEmail" placeholder="email" required class="w-full p-4 bg-neutral-900 text-white border border-white focus:ring-1 focus:ring-white focus:outline-none placeholder-neutral-500 text-sm"/>
+                    
+                    <input type="password" id="signUpPassword" placeholder="password" required class="w-full p-4 bg-neutral-900 text-white border border-white focus:ring-1 focus:ring-white focus:outline-none placeholder-neutral-500 text-sm"/>
+                    
+                    <input type="password" id="signUpConfirmPassword" placeholder="confirm password" required class="w-full p-4 bg-neutral-900 text-white border border-white focus:ring-1 focus:ring-white focus:outline-none placeholder-neutral-500 text-sm"/>
+                    
+                    <!-- Sign Up Button with loading spinner -->
+                    <button type="submit" id="signUpSubmitButton" class="w-full bg-white text-black font-bold py-3 mt-4 hover:bg-neutral-300 transition-colors shadow-lg flex items-center justify-center">
+                        SIGN UP
+                    </button>
+                </form>
+                
+                <!-- Switch to Log In -->
+                <p class="text-center text-sm mt-6 text-neutral-400">
+                    Already got an account? 
+                    <a href="#" id="showLoginLink" class="text-white font-semibold hover:text-neutral-300 transition-colors">Log In</a>
+                </p>
+            </div>
+        </div>
+        
+        <!-- ---------------------------------------------------------------------- -->
+        <!-- LOG IN VIEW CONTAINER -->
+        <!-- ---------------------------------------------------------------------- -->
+        <div id="logInView" class="hidden w-full pt-12 pb-16 min-h-[calc(100vh-4rem)] flex justify-center items-start">
+            <div class="w-full max-w-md px-4">
+                <h2 class="text-3xl font-extrabold text-white mb-8 text-center">log in to pablo</h2>
+                
+                <form id="logInForm" class="space-y-4">
+                    <input type="text" id="logInEmail" placeholder="email" required class="w-full p-4 bg-neutral-900 text-white border border-white focus:ring-1 focus:ring-white focus:outline-none placeholder-neutral-500 text-sm"/>
+                    
+                    <input type="password" id="logInPassword" placeholder="password" required class="w-full p-4 bg-neutral-900 text-white border border-white focus:ring-1 focus:ring-white focus:outline-none placeholder-neutral-500 text-sm"/>
+                    
+                    <!-- Log In Button with loading spinner -->
+                    <button type="submit" id="logInSubmitButton" class="w-full bg-white text-black font-bold py-3 mt-4 hover:bg-neutral-300 transition-colors shadow-lg flex items-center justify-center">
+                        LOG IN
+                    </button>
+                </form>
+                
+                <!-- Switch to Sign Up -->
+                <p class="text-center text-sm mt-6 text-neutral-400">
+                    Need an account? 
+                    <a href="#" id="showSignUpLinkFromLogin" class="text-white font-semibold hover:text-neutral-300 transition-colors">Sign Up</a>
+                </p>
+            </div>
+        </div>
+        
+        <!-- ---------------------------------------------------------------------- -->
+        <!-- AUTHENTICATED DASHBOARD VIEW -->
+        <!-- ---------------------------------------------------------------------- -->
+        <div id="dashboardView" class="hidden w-full pt-20 pb-16 min-h-[calc(100vh-4rem)] flex flex-col items-center justify-start text-white">
+            <div class="max-w-4xl w-full p-4">
+                <!-- ID added to this element to update the greeting dynamically -->
+                <h2 id="dashboardGreeting" class="text-4xl font-extrabold mb-4">welcome back!</h2>
+                <p id="authStatusText" class="text-neutral-400 mb-8"></p>
+                
+                <div class="space-y-4 p-6 bg-neutral-800 border border-neutral-700">
+                    <h3 class="text-xl font-bold">your secret stash</h3>
+                    <p>This is where your content would go. You are successfully logged in!</p>
+                    <p>User ID (used for unique data storage): <span id="currentUserId" class="font-mono text-sm text-neutral-300"></span></p>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <!-- FOOTER: Remains fixed at the bottom of the body (no change) -->
+    <footer class="w-full flex items-center justify-center bg-black border-t border-neutral-800 py-16">
+        <p class="text-neutral-400 text-sm">
+            made with hate by intergalaxity
+        </p>
+    </footer>
+
+    <!-- JavaScript for Functionality (Firebase and UI Logic) -->
+    <script type="module">
+        // Firebase Configuration (Using provided mock config)
+        window.__firebase_config = JSON.stringify({
+            apiKey: "AIzaSyDt91IN8NhTwgcVdk8R_7aOzeMYvszKRyE",
+            authDomain: "pablomusic1.firebaseapp.com",
+            projectId: "pablomusic1",
+            storageBucket: "pablomusic1.firebasestorage.app",
+            messagingSenderId: "681554880367",
+            appId: "1:681554880367:web:9c9760e7796f3c8956ea9a"
+        });
+
+        // Import Firebase modules (Added necessary Firestore functions, including getDoc)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInWithCustomToken, 
+            onAuthStateChanged, 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword,
+            signOut 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            setLogLevel,
+            collection,
+            query,
+            where,
+            getDocs,
+            doc,
+            setDoc,
+            getDoc // <-- ADDED: Necessary to fetch the username document
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Enable debug logging for Firestore/Firebase
+        setLogLevel('Debug');
+
+        // 1. GLOBAL VARIABLES & CONFIG ACCESS
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        
+        // Firestore path for storing and checking unique usernames (Public collection)
+        const USERNAME_COLLECTION_PATH = `/artifacts/${appId}/public/data/usernames`;
+
+        let app;
+        let auth;
+        let db;
+        let isAuthReady = false;
+        let currentUserId = null;
+
+        // 2. DOM ELEMENT REFERENCES
+        const messageBox = document.getElementById('messageBox');
+        
+        // Views
+        const landingView = document.getElementById('landingView');
+        const signUpView = document.getElementById('signUpView');
+        const logInView = document.getElementById('logInView');
+        const dashboardView = document.getElementById('dashboardView');
+        
+        // Header UI
+        const homeLink = document.getElementById('homeLink');
+        const signUpButton = document.getElementById('signUpButton');
+        const logInButton = document.getElementById('logInButton');
+        const logOutButton = document.getElementById('logOutButton');
+
+        // Forms and Inputs
+        const signUpForm = document.getElementById('signUpForm');
+        const logInForm = document.getElementById('logInForm');
+        const signUpSubmitButton = document.getElementById('signUpSubmitButton');
+        const logInSubmitButton = document.getElementById('logInSubmitButton');
+        
+        // Dashboard
+        const currentUserIdSpan = document.getElementById('currentUserId');
+        const authStatusText = document.getElementById('authStatusText');
+        const dashboardGreetingElement = document.getElementById('dashboardGreeting'); // <-- ADDED: Reference to the dynamic H2
+
+        let currentView = 'landing';
+
+        /**
+         * Utility to display non-blocking messages.
+         * @param {string} message - The message to display.
+         * @param {string} type - 'success', 'error', or default (info).
+         */
+        function showMessage(message, type = 'info') {
+            let bgColor = 'bg-yellow-500';
+            let textColor = 'text-black';
+
+            if (type === 'error') {
+                bgColor = 'bg-red-600';
+                textColor = 'text-white';
+            } else if (type === 'success') {
+                bgColor = 'bg-green-500';
+                textColor = 'text-white';
+            }
+
+            messageBox.className = `fixed top-20 right-6 p-4 rounded-lg ${bgColor} ${textColor} shadow-lg z-50 transition-opacity duration-300 opacity-0 hidden`;
+            messageBox.textContent = message;
+            messageBox.classList.remove('hidden', 'opacity-0');
+            messageBox.classList.add('opacity-100');
+            
+            setTimeout(() => {
+                messageBox.classList.remove('opacity-100');
+                messageBox.classList.add('opacity-0');
+                setTimeout(() => {
+                    messageBox.classList.add('hidden');
+                }, 300); 
+            }, 3000); 
+        }
+
+        /**
+         * Toggles the loading state of a button.
+         * @param {HTMLElement} button - The button element.
+         * @param {boolean} isLoading - Whether to show the loading spinner.
+         * @param {string} originalText - The original text of the button.
+         */
+        function toggleLoading(button, isLoading, originalText) {
+            button.disabled = isLoading;
+            if (isLoading) {
+                button.setAttribute('data-original-text', originalText || button.textContent);
+                button.innerHTML = '<div class="loader"></div>';
+            } else {
+                button.textContent = button.getAttribute('data-original-text') || 'Submit';
+                button.removeAttribute('data-original-text');
+            }
+        }
+        
+        /**
+         * Generates a time-based greeting (morning, afternoon, night).
+         * @returns {string} The greeting string.
+         */
+        function getGreeting() {
+            const hour = new Date().getHours();
+            if (hour < 5 || hour >= 22) { // 10 PM to 4:59 AM
+                return "good night";
+            } else if (hour < 12) { // 5 AM to 11:59 AM
+                return "good morning";
+            } else if (hour < 18) { // 12 PM to 5:59 PM
+                return "good afternoon";
+            } else { // 6 PM to 9:59 PM
+                return "good evening";
+            }
+        }
+        
+        /**
+         * Fetches the username and updates the dashboard greeting.
+         * @param {object} user - The authenticated Firebase user object.
+         */
+        async function updateDashboardContent(user) {
+            if (!user || !db) return;
+
+            const greetingText = getGreeting();
+            
+            // Set immediate UI elements
+            currentUserIdSpan.textContent = user.uid;
+            authStatusText.textContent = `You are authenticated with UID: ${user.uid}`;
+            
+            // Set a temporary greeting while fetching data
+            dashboardGreetingElement.textContent = `${greetingText}, loading...`;
+
+            try {
+                // Fetch the username from the public collection where it was stored during sign up
+                const docRef = doc(db, USERNAME_COLLECTION_PATH, user.uid);
+                const docSnap = await getDoc(docRef); 
+
+                if (docSnap.exists()) {
+                    const userData = docSnap.data();
+                    // Use username from Firestore, fallback to a generic name
+                    const username = userData.username || 'friend';
+                    dashboardGreetingElement.textContent = `${greetingText}, ${username}!`;
+                } else {
+                    console.warn(`Username document not found for UID: ${user.uid}`);
+                    dashboardGreetingElement.textContent = `${greetingText}, new user!`;
+                }
+            } catch (error) {
+                console.error("Failed to fetch username:", error);
+                dashboardGreetingElement.textContent = `${greetingText}, friend!`;
+            }
+        }
+
+
+        /**
+         * Switches the visible view and scrolls to the top.
+         * @param {string} viewId - The ID of the view to show ('landing', 'signUp', 'logIn', or 'dashboard').
+         */
+        function setView(viewId) {
+            currentView = viewId;
+            landingView.classList.add('hidden');
+            signUpView.classList.add('hidden');
+            logInView.classList.add('hidden');
+            dashboardView.classList.add('hidden');
+            
+            if (viewId === 'landing') {
+                landingView.classList.remove('hidden');
+            } else if (viewId === 'signUp') {
+                signUpView.classList.remove('hidden');
+            } else if (viewId === 'logIn') {
+                logInView.classList.remove('hidden');
+            } else if (viewId === 'dashboard') {
+                dashboardView.classList.remove('hidden');
+                // Ensure dashboard data is updated when shown
+                if (auth.currentUser) {
+                    updateDashboardContent(auth.currentUser); // <-- Use the new function to update content
+                } else {
+                    currentUserIdSpan.textContent = "N/A";
+                    authStatusText.textContent = "Please log in to see your dashboard.";
+                    dashboardGreetingElement.textContent = "welcome back!";
+                }
+            }
+            window.scrollTo(0, 0); 
+        }
+
+        /**
+         * Updates the header UI based on the authentication state.
+         * @param {object | null} user - The Firebase user object or null.
+         */
+        function updateAuthUI(user) {
+            if (user) {
+                // User is signed in
+                signUpButton.classList.add('hidden');
+                logInButton.classList.add('hidden');
+                logOutButton.classList.remove('hidden');
+                currentUserId = user.uid;
+                
+                // Fetch and display dynamic dashboard content
+                updateDashboardContent(user);
+
+                // If on an auth form, redirect to dashboard
+                if (currentView === 'signUp' || currentView === 'logIn' || currentView === 'landing') {
+                    setView('dashboard');
+                }
+            } else {
+                // User is signed out
+                signUpButton.classList.remove('hidden');
+                logInButton.classList.remove('hidden');
+                logOutButton.classList.add('hidden');
+                currentUserId = null;
+                // If on dashboard, redirect to landing page
+                if (currentView === 'dashboard') {
+                    setView('landing');
+                }
+            }
+        }
+        
+        /**
+         * Initializes Firebase and sets up the Auth state listener.
+         */
+        async function initializeFirebase() {
+            try {
+                if (Object.keys(firebaseConfig).length === 0) {
+                    console.error("Firebase config is missing.");
+                    showMessage("Firebase not configured.", 'error');
+                    return;
+                }
+
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                // 3. AUTHENTICATION LISTENER AND INITIAL SIGN-IN
+                onAuthStateChanged(auth, (user) => {
+                    isAuthReady = true;
+                    updateAuthUI(user);
+                    if (!user) {
+                        // If signed out, ensure view is not blocked
+                        setView(currentView === 'dashboard' ? 'landing' : currentView);
+                    }
+                });
+
+                // Sign in with custom token if present
+                if (initialAuthToken) {
+                    try {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                        console.log("Signed in with custom token.");
+                    } catch (tokenError) {
+                        // Catching the specific custom-token-mismatch error here to prevent the app from failing.
+                        console.warn("Initial custom token sign-in failed (likely 'auth/custom-token-mismatch'). Proceeding with manual sign-in flow.");
+                        // The app can continue functioning for manual email/password auth
+                    }
+                }
+                // No automatic anonymous sign-in - users will sign up/log in manually
+
+            } catch (error) {
+                console.error("Firebase initialization or general failure:", error); 
+                showMessage(`Initialization failed: ${error.message}`, 'error');
+            }
+        }
+
+        // --- AUTH HANDLERS ---
+
+        /**
+         * Handles user sign-up via email and password, including checking for unique usernames
+         * in Firestore before creation.
+         */
+        async function handleSignUp(e) {
+            e.preventDefault();
+            const email = e.target.querySelector('#signUpEmail').value.trim();
+            const password = e.target.querySelector('#signUpPassword').value;
+            const confirmPassword = e.target.querySelector('#signUpConfirmPassword').value;
+            const username = e.target.querySelector('#signUpUsername').value.trim();
+            const originalText = signUpSubmitButton.textContent;
+
+            // Basic Form Validation
+            if (password !== confirmPassword) {
+                showMessage("Passwords do not match.", 'error');
+                return;
+            }
+            if (username.length < 3) {
+                showMessage("Username must be at least 3 characters long.", 'error');
+                return;
+            }
+
+            toggleLoading(signUpSubmitButton, true, originalText);
+
+            try {
+                // 1. CHECK FIREBASE FOR DUPLICATE USERNAME
+                const usernamesRef = collection(db, USERNAME_COLLECTION_PATH);
+                // Create a query to check if a document exists where the 'username' field equals the input username
+                const usernameQuery = query(usernamesRef, where("username", "==", username));
+                const snapshot = await getDocs(usernameQuery);
+
+                if (!snapshot.empty) {
+                    // Username found in Firestore! (This is where the error should have been caught)
+                    showMessage(`The username "${username}" is already taken. Please choose another.`, 'error');
+                    return; // Stop execution before calling Firebase Auth
+                }
+
+                // 2. CREATE USER IN FIREBASE AUTH
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // 3. SAVE UNIQUE USERNAME MAPPING TO FIRESTORE
+                // The document ID is the user's UID for easy lookup and linking.
+                await setDoc(doc(usernamesRef, user.uid), {
+                    userId: user.uid,
+                    username: username,
+                    email: user.email,
+                    createdAt: new Date().toISOString()
+                });
+
+                showMessage(`Account created successfully. Welcome, ${username}!`, 'success');
+                e.target.reset(); // Clear form
+
+            } catch (error) {
+                console.error("Sign Up Failed:", error);
+                
+                let displayMessage = "An unknown error occurred during sign up.";
+
+                // Enhanced Error Code Handling
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        displayMessage = "This email is already taken. Please try logging in.";
+                        break;
+                    case 'auth/weak-password':
+                        displayMessage = "The password is too weak. It must be at least 6 characters long.";
+                        break;
+                    case 'auth/invalid-email':
+                        displayMessage = "The email address is not valid.";
+                        break;
+                    default:
+                        // Fallback for other less common errors
+                        displayMessage = `Sign Up Failed: ${error.message}`;
+                }
+                
+                showMessage(displayMessage, 'error');
+                
+            } finally {
+                toggleLoading(signUpSubmitButton, false, originalText);
+            }
+        }
+
+        /**
+         * Handles user log-in via email and password.
+         */
+        async function handleLogIn(e) {
+            e.preventDefault();
+            const email = e.target.querySelector('#logInEmail').value;
+            const password = e.target.querySelector('#logInPassword').value;
+            const originalText = logInSubmitButton.textContent;
+
+            toggleLoading(logInSubmitButton, true, originalText);
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                showMessage("Logged in successfully. Welcome back!", 'success');
+                e.target.reset(); // Clear form
+                // UI will be updated by onAuthStateChanged listener
+            } catch (error) {
+                console.error("Log In Failed:", error);
+                
+                let displayMessage = "Log in failed.";
+                
+                // Enhanced Login Error Handling
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                    case 'auth/wrong-password':
+                    case 'auth/invalid-credential': // Modern error for general bad credentials
+                        displayMessage = "Invalid email or password.";
+                        break;
+                    case 'auth/invalid-email':
+                        displayMessage = "The email address format is invalid.";
+                        break;
+                    default:
+                        displayMessage = `Log In Failed: ${error.message}`;
+                }
+                
+                showMessage(displayMessage, 'error');
+            } finally {
+                
+                toggleLoading(logInSubmitButton, false, originalText);
+            }
+        }
+
+        /**
+         * Handles user log-out.
+         */
+        async function handleLogOut() {
+            try {
+                await signOut(auth);
+                showMessage("fuck you", 'info');
+                // UI and view update handled by onAuthStateChanged listener
+            } catch (error) {
+                console.error("Log Out Failed:", error);
+                showMessage(`Log Out Failed: ${error.message}`, 'error');
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        
+        // 1. Navigation Clicks
+        homeLink.addEventListener('click', (e) => { 
+            e.preventDefault(); 
+            // If logged in, go to dashboard, otherwise landing
+            setView(auth.currentUser ? 'dashboard' : 'landing');
+        });
+        
+        // Header Buttons
+        signUpButton.addEventListener('click', () => setView('signUp'));
+        logInButton.addEventListener('click', () => setView('logIn'));
+        logOutButton.addEventListener('click', handleLogOut); // Log Out handler
+
+        // Links inside Forms
+        document.getElementById('showLoginLink').addEventListener('click', (e) => { e.preventDefault(); setView('logIn'); }); 
+        document.getElementById('showSignUpLinkFromLogin').addEventListener('click', (e) => { e.preventDefault(); setView('signUp'); });
+
+        // 2. Auth Form Submissions (Now using Firebase Handlers)
+        signUpForm.addEventListener('submit', handleSignUp);
+        logInForm.addEventListener('submit', handleLogIn);
+
+
+        // 3. Search Form Submission (Kept placeholder logic)
+        document.getElementById('searchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const searchInput = document.getElementById('searchInput');
+            const query = searchInput.value.trim();
+            
+            if (query) {
+                showMessage(`Searching pablo for: "${query}".`);
+                searchInput.value = '';
+            } else {
+                showMessage("Please enter a search term.");
+            }
+        });
+
+
+        // --- Initial Application Setup ---
+        initializeFirebase();
+        setView('landing'); 
+    </script>
+</body>
+</html>
